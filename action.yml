@@ -1,5 +1,5 @@
 name: 'Terragrunt Github Action'
-description: '.'
+description: 'Guithub Action for Terragrunt.'
 author:  'info@gruntwork.io'
 branding:
   icon: 'award'
