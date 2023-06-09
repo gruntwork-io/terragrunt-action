@@ -3,7 +3,12 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: ubuntu-2204:2022.04.2
+      - image: 087285199408.dkr.ecr.us-east-1.amazonaws.com/circle-ci-test-image-base:go1.18-tf1.4-tg39.1-pck1.8-ci50.7
+    context:
+      - AWS__PHXDEVOPS__circle-ci-test
+      - GITHUB__PAT__gruntwork-ci
+      - GCP__automated-tests
+      - GITHUB__PAT__gruntwork-ci
     steps:
       - checkout
       - setup_remote_docker:
