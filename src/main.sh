@@ -1,19 +1,30 @@
 #!/usr/bin/env bash
 set -e
 
-[[ "${TRACE}" ]] && set -x
-
+# write log message with timestamp
 function log {
   local -r message="$1"
   local -r timestamp=$(date +"%Y-%m-%d %H:%M:%S")
   >&2 echo -e "${timestamp} ${message}"
 }
 
+# remove ANSI color codes from argument variable
 function clean_colors {
   local -r input="$1"
   echo "${input}" | sed -E 's/\x1B\[[0-9;]*[mGK]//g'
 }
 
+# clean multiline text to be passed to Github API
+function clean_multiline_text {
+  local -r input="$1"
+  local output
+  output="${input//'%'/'%25'}"
+  output="${output//$'\n'/'%0A'}"
+  output="${output//$'\r'/'%0D'}"
+  echo "${output}"
+}
+
+# install and switch particular terraform version
 function install_terraform {
   local -r version="$1"
   if [[ "${version}" == "none" ]]; then
@@ -23,6 +34,7 @@ function install_terraform {
   tfenv use "${version}"
 }
 
+# install passed terragrunt version
 function install_terragrunt {
   local -r version="$1"
   if [[ "${version}" == "none" ]]; then
@@ -31,6 +43,11 @@ function install_terragrunt {
   TG_VERSION="${version}" tgswitch
 }
 
+# run terragrunt commands in specified directory
+# arguments: directory and terragrunt command
+# output variables:
+# terragrunt_log_file path to log file
+# terragrunt_exit_code exit code of terragrunt command
 function run_terragrunt {
   local -r dir="$1"
   local -r command=($2)
@@ -42,9 +59,9 @@ function run_terragrunt {
   terragrunt "${command[@]}" 2>&1 | tee "${terragrunt_log_file}"
   # terragrunt_exit_code can be used later to determine if execution was successful
   terragrunt_exit_code=${PIPESTATUS[0]}
-
 }
 
+# post comment to pull request
 function comment {
   local -r message="$1"
   local comment_url
@@ -101,9 +118,7 @@ ${terragrunt_output}
   echo "tg_action_exit_code=${exit_code}" >> "${GITHUB_OUTPUT}"
 
   local tg_action_output
-  tg_action_output="${terragrunt_output//'%'/'%25'}"
-  tg_action_output="${tg_action_output//$'\n'/'%0A'}"
-  tg_action_output="${tg_action_output//$'\r'/'%0D'}"
+  tg_action_output=$(clean_multiline_text "${terragrunt_output}")
   echo "tg_action_output=${tg_action_output}" >> "${GITHUB_OUTPUT}"
 
   exit $exit_code
