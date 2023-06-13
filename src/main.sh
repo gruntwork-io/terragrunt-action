@@ -78,11 +78,26 @@ function comment {
 function main {
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
-  local -r tf_version=${INPUT_TF_VERSION:-latest}
-  local -r tg_version=${INPUT_TG_VERSION:-latest}
-  local -r tg_command=${INPUT_TG_COMMAND:-plan}
+  local -r tf_version=${INPUT_TF_VERSION}
+  local -r tg_version=${INPUT_TG_VERSION}
+  local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_dir=${INPUT_TG_DIR:-.}
+
+  if [[ -z "${tf_version}" ]]; then
+    log "tf_version is not set"
+    exit 1
+  fi
+
+  if [[ -z "${tg_version}" ]]; then
+    log "tg_version is not set"
+    exit 1
+  fi
+
+  if [[ -z "${tg_command}" ]]; then
+    log "tg_command is not set"
+    exit 1
+  fi
 
   install_terraform "${tf_version}"
   install_terragrunt "${tg_version}"
