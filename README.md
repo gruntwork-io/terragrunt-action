@@ -3,9 +3,31 @@ A GitHub Action for installing and running Terragrunt
 
 ## Inputs
 
+Supported GitHub action inputs:
+
+| Input Name | Description                                       | Required |
+|:-----------|:--------------------------------------------------|:--------:|
+| tf_version | Terraform version to be used in Action execution  |  `true`  |
+| tg_version | Terragrunt version to be user in Action execution |  `true`  |
+| tg_dir     | Directory in which Terragrunt will be invoked     |  `true`  |
+| tg_command | Terragrunt command to execute                     |  `true`  |
+| tg_comment | Add comment to Pull request with execution output | `false`  |
+
 ## Outputs
 
+Outputs of GitHub action:
+
+| Input Name          | Description                     |
+|:--------------------|:--------------------------------|
+| tg_action_exit_code | Terragrunt exit code            |
+| tg_action_output    | Terragrunt output as plain text | 
+
 ## Environment Variables
+
+Supported environment variables:
+* `GITHUB_TOKEN` - GitHub token used to add comment to Pull request
+* `TF_LOG` - log level for Terraform
+* `TF_VAR_name` - Define custom variable name as inputs
 
 ## Usage
 
