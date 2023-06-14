@@ -1,0 +1,31 @@
+name: 'Terragrunt Github Action'
+description: 'Guithub Action for Terragrunt.'
+author:  'info@gruntwork.io'
+branding:
+  icon: 'award'
+  color: 'green'
+inputs:
+  tg_version:
+    description: 'Terragrunt version to install.'
+    required: true
+  tf_version:
+    description: 'Terraform version to install.'
+    required: true
+  tg_command:
+    description: 'Terragrunt command to execute.'
+    required: true
+  tg_dir:
+    description: 'Directory in which Terragrunt will be executed.'
+    required: true
+  tg_comment:
+    description: 'Include execution output as comment'
+    default: '0'
+    required: false
+outputs:
+  tg_action_output:
+    description: 'Terragrunt execution output'
+  tg_action_exit_code:
+    description: 'Terragrunt exit code'
+runs:
+  using: 'docker'
+  image: './Dockerfile'
