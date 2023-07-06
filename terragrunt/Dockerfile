@@ -15,6 +15,9 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /root/.ssh
+COPY ./known_hosts /root/.ssh/known_hosts
+
 # clone tfenv
 RUN git clone --depth=1 --branch ${TF_ENV_VERSION} https://github.com/tfutils/tfenv.git ~/.tfenv
 RUN echo 'export PATH="${HOME}/.tfenv/bin:${PATH}"' >> ~/.bash_profile
