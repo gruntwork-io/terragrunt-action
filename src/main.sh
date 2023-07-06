@@ -78,7 +78,6 @@ function comment {
 function setup_git {
   # Avoid git permissions warnings
   git config --global --add safe.directory /github/workspace
-  git config --global --list
 }
 
 function main {
