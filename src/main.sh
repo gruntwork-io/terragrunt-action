@@ -75,6 +75,11 @@ function comment {
   curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$messagePayload" "$comment_url"
 }
 
+function setup_git {
+  # Avoid git permissions warnings
+  git config --global --add safe.directory /github/workspace
+}
+
 function main {
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
@@ -98,7 +103,7 @@ function main {
     log "tg_command is not set"
     exit 1
   fi
-
+  setup_git
   install_terraform "${tf_version}"
   install_terragrunt "${tg_version}"
 
