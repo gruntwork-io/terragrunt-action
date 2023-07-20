@@ -93,6 +93,9 @@ function main {
   log "/github/file_commands"
   ls -lahrt /github/file_commands
 
+  log "git config 1"
+  git config --list
+
   pwd
   ls -lahrt .
 
@@ -119,6 +122,10 @@ function main {
     exit 1
   fi
   setup_git
+
+  log "git config 1"
+  git config --list
+
   install_terraform "${tf_version}"
   install_terragrunt "${tg_version}"
 
