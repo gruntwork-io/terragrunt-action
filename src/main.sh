@@ -80,6 +80,22 @@ function setup_git {
   git config --global --add safe.directory /github/workspace
 }
 
+# Run INPUT_PRE_EXEC_* environment variables as Bash code
+function setup_pre_exec {
+  env
+  # Get all environment variables that match the pattern INPUT_PRE_EXEC_*
+  local -r pre_exec_vars=$(env | grep -o '^INPUT_PRE_EXEC_[0-9]\+' | sort)
+  # Loop through each pre-execution variable and execute its value (Bash code)
+  local pre_exec_command
+  while IFS= read -r pre_exec_var; do
+    log "Evaluating ${pre_exec_var}"
+    pre_exec_command="${!pre_exec_var}"
+    if [ -n "$pre_exec_command" ]; then
+        eval "$pre_exec_command"
+    fi
+  done <<< "$pre_exec_vars"
+}
+
 function main {
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
@@ -104,6 +120,8 @@ function main {
     exit 1
   fi
   setup_git
+  setup_pre_exec
+
   install_terraform "${tf_version}"
   install_terragrunt "${tg_version}"
 
