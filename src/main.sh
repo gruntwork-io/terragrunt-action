@@ -82,6 +82,8 @@ function setup_git {
 
 function main {
 
+  env
+
   log "/github/home"
   ls -lahrt /github/home
 
