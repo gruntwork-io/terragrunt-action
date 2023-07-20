@@ -104,12 +104,12 @@ Example of passing custom code before running Terragrunt:
   uses: gruntwork-io/terragrunt-action@v1
   env:
     # configure git to use custom token to clone repository.
-    INPUT_PRE_EXEC_0: |
+    INPUT_PRE_EXEC_1: |
       git config --global url."https://user:${{secrets.PAT_TOKEN}}@github.com".insteadOf "https://github.com"
+    # print git configuration
+    INPUT_PRE_EXEC_2: |
+      git config --global --list
   with:
-    tf_version: ${{ env.tf_version }}
-    tg_version: ${{ env.tg_version }}
-    tg_dir: ${{ env.working_dir }}
-    tg_command: 'run-all plan'
+    tg_command: 'plan'
 ...
 ```
