@@ -84,7 +84,7 @@ function setup_git {
 function setup_pre_exec {
   env
   # Get all environment variables that match the pattern INPUT_PRE_EXEC_*
-  local -r pre_exec_vars=$(env | grep -o '^INPUT_PRE_EXEC_[0-9]\+=' | sort)
+  local -r pre_exec_vars=$(env | grep -o '^INPUT_PRE_EXEC_[0-9]\+' | sort)
   # Loop through each pre-execution variable and execute its value (Bash code)
   while IFS= read -r pre_exec_var; do
     log "Evaluating ${pre_exec_var}"
