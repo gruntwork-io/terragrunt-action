@@ -82,6 +82,15 @@ function setup_git {
 
 function main {
 
+  log "/github/home"
+  ls -lahrt /github/home
+
+  log "/github/workflow"
+  ls -lahrt /github/workflow
+
+  log "/github/file_command"
+  ls -lahrt /github/file_command
+
   pwd
   ls -lahrt .
 
