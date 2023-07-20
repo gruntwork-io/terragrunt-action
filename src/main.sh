@@ -81,6 +81,10 @@ function setup_git {
 }
 
 function main {
+
+  pwd
+  ls -lahrt .
+
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
   local -r tf_version=${INPUT_TF_VERSION}
