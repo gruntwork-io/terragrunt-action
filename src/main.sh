@@ -88,8 +88,8 @@ function main {
   log "/github/workflow"
   ls -lahrt /github/workflow
 
-  log "/github/file_command"
-  ls -lahrt /github/file_command
+  log "/github/file_commands"
+  ls -lahrt /github/file_commands
 
   pwd
   ls -lahrt .
