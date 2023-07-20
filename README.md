@@ -14,11 +14,16 @@ Supported GitHub action inputs:
 | tg_command | Terragrunt command to execute                     |  `true`  |
 | tg_comment | Add comment to Pull request with execution output | `false`  |
 
-Environment variables:
+## Environment Variables
 
-| Name                    | Description                                                                                                 | 
-|:------------------------|:------------------------------------------------------------------------------------------------------------|
-| INPUT_PRE_EXEC_<number> | environment variable is utilized to provide custom commands that will be executed before running Terragrunt |
+Supported environment variables:
+
+| Input Name            | Description                                                                                                 | 
+|:----------------------|:------------------------------------------------------------------------------------------------------------|
+| GITHUB_TOKEN          | GitHub token used to add comment to Pull request                                                            |
+| TF_LOG                | Log level for Terraform                                                                                     |
+| TF_VAR_name           | Define custom variable name as inputs                                                                       |
+| INPUT_PRE_EXEC_number | Environment variable is utilized to provide custom commands that will be executed before running Terragrunt |
 
 ## Outputs
 
@@ -27,15 +32,7 @@ Outputs of GitHub action:
 | Input Name          | Description                     |
 |:--------------------|:--------------------------------|
 | tg_action_exit_code | Terragrunt exit code            |
-| tg_action_output    | Terragrunt output as plain text | 
-
-## Environment Variables
-
-Supported environment variables:
-
-* `GITHUB_TOKEN` - GitHub token used to add comment to Pull request
-* `TF_LOG` - log level for Terraform
-* `TF_VAR_name` - Define custom variable name as inputs
+| tg_action_output    | Terragrunt output as plain text |
 
 ## Usage
 
