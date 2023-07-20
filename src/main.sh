@@ -87,6 +87,7 @@ function setup_pre_exec {
   local -r pre_exec_vars=$(env | grep -o '^INPUT_PRE_EXEC_[0-9]\+=' | sort)
   # Loop through each pre-execution variable and execute its value (Bash code)
   while IFS= read -r pre_exec_var; do
+    log "Evaluating ${pre_exec_var}"
     local -r pre_exec_command="${!pre_exec_var}"
     if [ -n "$pre_exec_command" ]; then
         eval "$pre_exec_command"
