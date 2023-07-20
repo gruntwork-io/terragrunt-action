@@ -123,7 +123,7 @@ function main {
   fi
   setup_git
 
-  log "git config 1"
+  log "git config 2"
   git config --list
 
   install_terraform "${tf_version}"
