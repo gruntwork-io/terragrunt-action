@@ -1,4 +1,5 @@
 # terragrunt-action
+
 A GitHub Action for installing and running Terragrunt
 
 ## Inputs
@@ -13,6 +14,12 @@ Supported GitHub action inputs:
 | tg_command | Terragrunt command to execute                     |  `true`  |
 | tg_comment | Add comment to Pull request with execution output | `false`  |
 
+Environment variables:
+
+| Name                    | Description                                                                                                 | 
+|:------------------------|:------------------------------------------------------------------------------------------------------------|
+| INPUT_PRE_EXEC_<number> | environment variable is utilized to provide custom commands that will be executed before running Terragrunt |
+
 ## Outputs
 
 Outputs of GitHub action:
@@ -25,6 +32,7 @@ Outputs of GitHub action:
 ## Environment Variables
 
 Supported environment variables:
+
 * `GITHUB_TOKEN` - GitHub token used to add comment to Pull request
 * `TF_LOG` - log level for Terraform
 * `TF_VAR_name` - Define custom variable name as inputs
@@ -32,6 +40,7 @@ Supported environment variables:
 ## Usage
 
 Example definition of Github Action workflow:
+
 ```yaml
 name: 'Terragrunt GitHub Actions'
 on:
@@ -59,7 +68,7 @@ jobs:
 
   plan:
     runs-on: ubuntu-latest
-    needs: [checks]
+    needs: [ checks ]
     steps:
       - name: 'Checkout'
         uses: actions/checkout@master
@@ -74,7 +83,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [plan]
+    needs: [ plan ]
     environment: 'prod'
     if: github.ref == 'refs/heads/master'
     steps:
@@ -90,3 +99,20 @@ jobs:
           tg_command: 'apply'
 ```
 
+Example of passing custom code before running Terragrunt:
+
+```yaml
+...
+- name: Plan
+  uses: gruntwork-io/terragrunt-action@v1
+  env:
+    # configure git to use custom token to clone repository.
+    INPUT_PRE_EXEC_0: |
+      git config --global url."https://user:${{secrets.PAT_TOKEN}}@github.com".insteadOf "https://github.com"
+  with:
+    tf_version: ${{ env.tf_version }}
+    tg_version: ${{ env.tg_version }}
+    tg_dir: ${{ env.working_dir }}
+    tg_command: 'run-all plan'
+...
+```
