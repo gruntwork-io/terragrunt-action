@@ -82,22 +82,9 @@ function setup_git {
 
 function main {
 
-  env
-
-  log "/github/home"
-  ls -lahrt /github/home
-
-  log "/github/workflow"
-  ls -lahrt /github/workflow
-
-  log "/github/file_commands"
-  ls -lahrt /github/file_commands
-
   log "git config 1"
   git config --list
 
-  pwd
-  ls -lahrt .
 
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
