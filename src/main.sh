@@ -88,10 +88,10 @@ function setup_pre_exec {
   # Loop through each pre-execution variable and execute its value (Bash code)
   local pre_exec_command
   while IFS= read -r pre_exec_var; do
-    log "Evaluating ${pre_exec_var}"
-    pre_exec_command="${!pre_exec_var}"
-    if [ -n "$pre_exec_command" ]; then
-        eval "$pre_exec_command"
+    if [ -n "${pre_exec_var}" ]; then
+      log "Evaluating ${pre_exec_var}"
+      pre_exec_command="${!pre_exec_var}"
+      eval "$pre_exec_command"
     fi
   done <<< "$pre_exec_vars"
 }
