@@ -66,6 +66,10 @@ function comment {
   local -r message="$1"
   local comment_url
   comment_url=$(jq -r '.pull_request.comments_url' "$GITHUB_EVENT_PATH")
+  # may be getting called from something like branch deploy
+  if [[ "${comment_url}" == "" || "${comment_url}" == "null" ]]; then
+    comment_url=$(jq -r '.issue.comments_url' "$GITHUB_EVENT_PATH")
+  fi
   if [[ "${comment_url}" == "" || "${comment_url}" == "null" ]]; then
     log "Skipping comment as there is not comment url"
     return
