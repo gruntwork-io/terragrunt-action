@@ -21,6 +21,10 @@ inputs:
     description: 'Include execution output as comment'
     default: '0'
     required: false
+  github_token:
+    description: 'Provide a custom Github Personal Access Token (PAT)'
+  github_private_path:
+    description: 'Path to a private Github repo/organisation. i.e github.com/<org name here>'    
 outputs:
   tg_action_output:
     description: 'Terragrunt execution output'
