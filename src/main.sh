@@ -24,6 +24,15 @@ function clean_multiline_text {
   echo "${output}"
 }
 
+# configure custom git authentication token based on provided private/internal org/repo path (supports GitHub App or PAT)
+function configurePrivateGitPath(){
+  if [ -n "${INPUT_GITHUB_TOKEN}" ] && [ -n "${INPUT_GITHUB_PRIVATE_PATH}" ]; then
+    if [ -n "${INPUT_GITHUB_AUTH_TYPE}" ] && [ "${INPUT_GITHUB_AUTH_TYPE}" =~ "app" ]; then
+      git config --global url."https://x-access-token:${INPUT_GITHUB_TOKEN}@${INPUT_GITHUB_PRIVATE_PATH}".insteadOf "https://${INPUT_GITHUB_PRIVATE_PATH}"
+    fi
+  fi
+}
+
 # install and switch particular terraform version
 function install_terraform {
   local -r version="$1"
@@ -127,6 +136,8 @@ function main {
 
   install_terraform "${tf_version}"
   install_terragrunt "${tg_version}"
+  
+  configurePrivateGitPath
 
   # add auto approve for apply and destroy commands
   if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* || "$tg_command" == "run-all apply"* || "$tg_command" == "run-all destroy"* ]]; then
