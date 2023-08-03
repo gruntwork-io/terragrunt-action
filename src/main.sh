@@ -21,6 +21,7 @@ function clean_multiline_text {
   output="${input//'%'/'%25'}"
   output="${output//$'\n'/'%0A'}"
   output="${output//$'\r'/'%0D'}"
+  output="${output//$'<'/'%3C'}"
   echo "${output}"
 }
 
