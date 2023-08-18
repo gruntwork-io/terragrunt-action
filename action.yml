@@ -1,9 +1,11 @@
-name: 'Terragrunt Github Action'
-description: 'Guithub Action for Terragrunt.'
-author:  'info@gruntwork.io'
+name: 'Gruntwork Terragrunt'
+description: 'Setup and execute Terragrunt.'
+author:  'Gruntwork'
+
 branding:
   icon: 'award'
-  color: 'green'
+  color: 'purple'
+
 inputs:
   tg_version:
     description: 'Terragrunt version to install.'
