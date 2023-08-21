@@ -1,4 +1,4 @@
-name: 'Gruntwork Terragrunt'
+name: 'Terragrunt Github Action'
 description: 'Setup and execute Terragrunt.'
 author:  'Gruntwork'
 
