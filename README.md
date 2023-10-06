@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@master
+        uses: actions/checkout@main
 
       - name: Check terragrunt HCL
         uses: gruntwork-io/terragrunt-action@v1
@@ -68,7 +68,7 @@ jobs:
     needs: [ checks ]
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@master
+        uses: actions/checkout@main
 
       - name: Plan
         uses: gruntwork-io/terragrunt-action@v1
@@ -82,10 +82,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ plan ]
     environment: 'prod'
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@master
+        uses: actions/checkout@main
 
       - name: Deploy
         uses: gruntwork-io/terragrunt-action@v1
