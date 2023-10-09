@@ -155,7 +155,7 @@ function main {
     comment "<details>
 <summary>Execution result of \`$tg_command\` in \`${tg_dir}\`</summary>
 
-\`\`\`
+\`\`\`terraform
 ${terragrunt_output}
 \`\`\`
 
