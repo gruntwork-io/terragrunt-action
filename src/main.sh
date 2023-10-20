@@ -152,10 +152,13 @@ function main {
   terragrunt_output=$(clean_colors "${terragrunt_log_content}")
 
   if [[ "${tg_comment}" == "1" ]]; then
-    comment "Execution result of \`$tg_command\` in \`${tg_dir}\` :
+    comment "<details>
+Execution result of \`$tg_command\` in \`${tg_dir}\` :
 \`\`\`terraform
 ${terragrunt_output}
 \`\`\`
+
+</details>
     "
   fi
 
