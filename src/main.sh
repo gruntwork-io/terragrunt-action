@@ -153,7 +153,7 @@ function main {
 
   if [[ "${tg_comment}" == "1" ]]; then
     comment "Execution result of \`$tg_command\` in \`${tg_dir}\` :
-\`\`\`
+\`\`\`terraform
 ${terragrunt_output}
 \`\`\`
     "
