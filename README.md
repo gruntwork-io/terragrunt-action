@@ -113,3 +113,34 @@ Example of passing custom code before running Terragrunt:
     tg_command: 'plan'
 ...
 ```
+
+### Using SSH Key for modules in private repositories
+This action is executed inside a docker container, as a result setting up the ssh key in the action will not work on 
+its own.  To get around this we can pass 
+
+- create SSH key and public key to your GH account or to private repository as deploy key
+- save private key as action secret, I usually save it under SSH_PRIVATE_KEY name
+- use webfactory/ssh-agent to start SSH agent and use SSH_PRIVATE_KEY
+- pass agent socket to Terragrunt action under SSH_AUTH_SOCK env variable
+
+Simplified example:
+
+``` yaml
+    - name: create directory to pass ssh-agent socket
+      run: "mkdir -p /home/runner/work/_temp/_github_workflow"
+      shell: bash
+
+    - uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        ssh-auth-sock: "/home/runner/work/_temp/_github_workflow/ssh-agent.sock"
+
+    - name: Plan
+      uses: gruntwork-io/terragrunt-action@v1
+      env:
+          # /home/runner/work/_temp/_github_workflow is mapped to /github/workflow during action execution, so we pass different path
+          SSH_AUTH_SOCK: "/github/workflow/ssh-agent.sock"
+```
+
+Reference:
+https://github.com/denis256/tg-gh-action-examples/blob/master/.github/workflows/private-repo.yml#L36
