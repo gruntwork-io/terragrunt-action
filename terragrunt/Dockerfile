@@ -15,8 +15,9 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-RUN addgroup --system --gid 1001 runner
-RUN adduser --system --uid 1001 runner
+# Create USER runner
+RUN addgroup --system --gid 127 runner
+RUN useradd -u 1001 -g runner runner
 USER runner
 
 RUN mkdir -p /home/runner/.ssh
