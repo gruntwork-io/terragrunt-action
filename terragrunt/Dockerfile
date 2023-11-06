@@ -15,8 +15,13 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /root/.ssh
-COPY ./known_hosts /root/.ssh/known_hosts
+# Create runner user
+RUN addgroup --system --gid 127 docker
+RUN useradd --system -u 1001 -g 127 -ms /bin/bash runner
+USER runner
+
+RUN mkdir -p /home/runner/.ssh
+COPY ./known_hosts /home/runner/.ssh/known_hosts
 
 # clone tfenv
 RUN git clone --depth=1 --branch ${TF_ENV_VERSION} https://github.com/tfutils/tfenv.git ~/.tfenv
@@ -29,9 +34,9 @@ RUN tar -xzf /tmp/tgswitch_${TGSWITCH_VERSION}_linux_amd64.tar.gz -C ${HOME}/tgs
 RUN chmod u+x ${HOME}/tgswitch/tgswitch
 RUN rm -rf /tmp/tgswitch_${TGSWITCH_VERSION}_linux_amd64.tar.gz
 
-# Running action as Root
+# Running action as runner user
 # https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions#user
-ENV PATH="/root/.tfenv/bin:/root/tgswitch:/root/bin:${PATH}"
+ENV PATH="/home/runner/.tfenv/bin:/home/runner/tgswitch:/home/runner/bin:${PATH}"
 
 ENV TF_INPUT=false
 ENV TF_IN_AUTOMATION=1
