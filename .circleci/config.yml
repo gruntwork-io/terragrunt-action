@@ -15,18 +15,6 @@ install_gruntwork_utils: &install_gruntwork_utils
     gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
     gruntwork-install --module-name "kubernetes-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
 
-
-install_docker_buildx: &install_docker_buildx
-  name: install docker buildx
-  command: |
-    curl -sLO https://github.com/docker/buildx/releases/download/v0.6.1/buildx-v0.6.1.linux-amd64
-    mkdir -p ~/.docker/cli-plugins
-    mv buildx-v0.6.1.linux-amd64 ~/.docker/cli-plugins/docker-buildx
-    chmod a+x ~/.docker/cli-plugins/docker-buildx
-
-    # Verify buildx is available
-    docker buildx create --use
-
 version: 2
 jobs:
   setup:
@@ -54,8 +42,6 @@ jobs:
 
       - run:
           <<: *install_gruntwork_utils
-      - run:
-          <<: *install_docker_buildx
 
 workflows:
   version: 2
