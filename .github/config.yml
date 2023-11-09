@@ -69,27 +69,7 @@ workflows:
             tags:
               only: /^v.*/
 
-      - kubernetes_test:
-          context:
-            - AWS__PHXDEVOPS__circle-ci-test
-            - GITHUB__PAT__gruntwork-ci
-          requires:
-            - setup
-          filters:
-            tags:
-              only: /^v.*/
-
-      - helm_test:
-          context:
-            - AWS__PHXDEVOPS__circle-ci-test
-            - GITHUB__PAT__gruntwork-ci
-          requires:
-            - setup
-          filters:
-            tags:
-              only: /^v.*/
-
-      - test_terraform:
+      - test:
           context:
             - AWS__PHXDEVOPS__circle-ci-test
             - GITHUB__PAT__gruntwork-ci
@@ -102,37 +82,3 @@ workflows:
             tags:
               only: /^v.*/
 
-      - test_tofu:
-          context:
-            - AWS__PHXDEVOPS__circle-ci-test
-            - GITHUB__PAT__gruntwork-ci
-            - SLACK__TOKEN__refarch-deployer-test
-            - SLACK__WEBHOOK__refarch-deployer-test
-            - SLACK__CHANNEL__test-workflow-approvals
-          requires:
-            - setup
-          filters:
-            tags:
-              only: /^v.*/
-
-      - gcp_test:
-          context:
-            - GCP__automated-tests
-            - GITHUB__PAT__gruntwork-ci
-          requires:
-            - setup
-          filters:
-            tags:
-              only: /^v.*/
-
-      - deploy:
-          context:
-            - AWS__PHXDEVOPS__circle-ci-test
-            - GITHUB__PAT__gruntwork-ci
-          requires:
-            - setup
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
