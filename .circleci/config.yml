@@ -55,7 +55,7 @@ workflows:
             tags:
               only: /^v.*/
 
-      - test:
+      - tests:
           context:
             - AWS__PHXDEVOPS__circle-ci-test
             - GITHUB__PAT__gruntwork-ci
