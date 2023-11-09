@@ -8,13 +8,8 @@ import (
 )
 
 func TestActionContainerIsBuilt(t *testing.T) {
-	tag := "terragrunt-action:test-1"
-	buildOptions := &docker.BuildOptions{
-		Tags: []string{tag},
-	}
-
-	docker.Build(t, "..", buildOptions)
-
+	tag := buildActionImage(t)
+	
 	opts := &docker.RunOptions{Entrypoint: "/bin/bash", Command: []string{"-c", "ls /action"}}
 	output := docker.Run(t, tag, opts)
 	assert.Equal(t, "main.sh", output)
