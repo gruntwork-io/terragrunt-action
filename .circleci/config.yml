@@ -52,6 +52,8 @@ jobs:
 
       - run:
           <<: *install_gruntwork_utils
+      - run: |
+          run-go-tests --path test --timeout 60m  --packages . | (tee /tmp/logs/all.log || true)
 
 workflows:
   version: 2
