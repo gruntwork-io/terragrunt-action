@@ -18,12 +18,13 @@ Supported GitHub action inputs:
 
 Supported environment variables:
 
-| Input Name            | Description                                                                                                 | 
-|:----------------------|:------------------------------------------------------------------------------------------------------------|
-| GITHUB_TOKEN          | GitHub token used to add comment to Pull request                                                            |
-| TF_LOG                | Log level for Terraform                                                                                     |
-| TF_VAR_name           | Define custom variable name as inputs                                                                       |
-| INPUT_PRE_EXEC_number | Environment variable is utilized to provide custom commands that will be executed before running Terragrunt |
+| Input Name             | Description                                                                                                  | 
+|:-----------------------|:-------------------------------------------------------------------------------------------------------------|
+| GITHUB_TOKEN           | GitHub token used to add comment to Pull request                                                             |
+| TF_LOG                 | Log level for Terraform                                                                                      |
+| TF_VAR_name            | Define custom variable name as inputs                                                                        |
+| INPUT_PRE_EXEC_number  | Environment variable is utilized to provide custom commands that will be executed before running Terragrunt  |
+| INPUT_POST_EXEC_number | Environment variable is utilized to provide custom commands that will be executed *after* running Terragrunt |
 
 ## Outputs
 
