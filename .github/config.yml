@@ -1,0 +1,138 @@
+env: &env
+  environment:
+    GRUNTWORK_INSTALLER_VERSION: v0.0.36
+    MODULE_CI_VERSION: v0.46.0
+defaults: &defaults
+  machine:
+    enabled: true
+    image: ubuntu-2004:2022.10.1
+  <<: *env
+
+install_gruntwork_utils: &install_gruntwork_utils
+  name: install gruntwork utils
+  command: |
+    curl -Ls https://raw.githubusercontent.com/gruntwork-io/gruntwork-installer/master/bootstrap-gruntwork-installer.sh | bash /dev/stdin --version "${GRUNTWORK_INSTALLER_VERSION}"
+    gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
+    gruntwork-install --module-name "kubernetes-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
+
+
+install_docker_buildx: &install_docker_buildx
+  name: install docker buildx
+  command: |
+    curl -sLO https://github.com/docker/buildx/releases/download/v0.6.1/buildx-v0.6.1.linux-amd64
+    mkdir -p ~/.docker/cli-plugins
+    mv buildx-v0.6.1.linux-amd64 ~/.docker/cli-plugins/docker-buildx
+    chmod a+x ~/.docker/cli-plugins/docker-buildx
+
+    # Verify buildx is available
+    docker buildx create --use
+
+version: 2
+jobs:
+  setup:
+    <<: *env
+    docker:
+      - image: cimg/python:3.10.2
+
+    steps:
+      - checkout
+
+      # Install gruntwork utilities
+      - run:
+          <<: *install_gruntwork_utils
+
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project
+
+  tests:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+
+      - run:
+          <<: *install_gruntwork_utils
+      - run:
+          <<: *install_docker_buildx
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - setup:
+          context:
+            - AWS__PHXDEVOPS__circle-ci-test
+            - GITHUB__PAT__gruntwork-ci
+          filters:
+            tags:
+              only: /^v.*/
+
+      - kubernetes_test:
+          context:
+            - AWS__PHXDEVOPS__circle-ci-test
+            - GITHUB__PAT__gruntwork-ci
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /^v.*/
+
+      - helm_test:
+          context:
+            - AWS__PHXDEVOPS__circle-ci-test
+            - GITHUB__PAT__gruntwork-ci
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /^v.*/
+
+      - test_terraform:
+          context:
+            - AWS__PHXDEVOPS__circle-ci-test
+            - GITHUB__PAT__gruntwork-ci
+            - SLACK__TOKEN__refarch-deployer-test
+            - SLACK__WEBHOOK__refarch-deployer-test
+            - SLACK__CHANNEL__test-workflow-approvals
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /^v.*/
+
+      - test_tofu:
+          context:
+            - AWS__PHXDEVOPS__circle-ci-test
+            - GITHUB__PAT__gruntwork-ci
+            - SLACK__TOKEN__refarch-deployer-test
+            - SLACK__WEBHOOK__refarch-deployer-test
+            - SLACK__CHANNEL__test-workflow-approvals
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /^v.*/
+
+      - gcp_test:
+          context:
+            - GCP__automated-tests
+            - GITHUB__PAT__gruntwork-ci
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /^v.*/
+
+      - deploy:
+          context:
+            - AWS__PHXDEVOPS__circle-ci-test
+            - GITHUB__PAT__gruntwork-ci
+          requires:
+            - setup
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
