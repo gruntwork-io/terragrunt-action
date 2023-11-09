@@ -1,0 +1,28 @@
+# Terraform files
+.terraform
+terraform.tfstate
+terraform.tfvars
+terraform.tfvars.json
+*.tfstate*
+.terragrunt
+.terragrunt-cache
+.terraform.lock.hcl
+# IDE files
+.idea
+.vscode
+*.iml
+vendor
+
+# Folder used to store temporary test data by Terratest
+.test-data
+
+# rbenv
+.ruby-version
+
+# OS X
+.DS_Store
+# Intermediate file for testing
+kubeconfig
+
+# environment files
+.env
