@@ -45,8 +45,8 @@ on:
   - pull_request
 
 env:
-  tf_version: '1.4.6'
-  tg_version: '0.46.3'
+  tf_version: '1.5.7'
+  tg_version: '0.53.2'
   working_dir: 'project'
 
 jobs:
@@ -57,7 +57,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Check terragrunt HCL
-        uses: gruntwork-io/terragrunt-action@v1
+        uses: gruntwork-io/terragrunt-action@v2
         with:
           tf_version: ${{ env.tf_version }}
           tg_version: ${{ env.tg_version }}
@@ -72,7 +72,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Plan
-        uses: gruntwork-io/terragrunt-action@v1
+        uses: gruntwork-io/terragrunt-action@v2
         with:
           tf_version: ${{ env.tf_version }}
           tg_version: ${{ env.tg_version }}
@@ -89,7 +89,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Deploy
-        uses: gruntwork-io/terragrunt-action@v1
+        uses: gruntwork-io/terragrunt-action@v2
         with:
           tf_version: ${{ env.tf_version }}
           tg_version: ${{ env.tg_version }}
@@ -102,7 +102,7 @@ Example of passing custom code before running Terragrunt:
 ```yaml
 ...
 - name: Plan
-  uses: gruntwork-io/terragrunt-action@v1
+  uses: gruntwork-io/terragrunt-action@v2
   env:
     # configure git to use custom token to clone repository.
     INPUT_PRE_EXEC_1: |
