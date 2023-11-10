@@ -102,6 +102,21 @@ function setup_pre_exec {
   done <<< "$pre_exec_vars"
 }
 
+# Run INPUT_POST_EXEC_* environment variables as Bash code
+function setup_post_exec {
+  # Get all environment variables that match the pattern INPUT_POST_EXEC_*
+  local -r post_exec_vars=$(env | grep -o '^INPUT_POST_EXEC_[0-9]\+' | sort)
+  # Loop through each pre-execution variable and execute its value (Bash code)
+  local post_exec_command
+  while IFS= read -r post_exec_var; do
+    if [[ -n "${post_exec_var}" ]]; then
+      log "Evaluating ${post_exec_var}"
+      post_exec_command="${!post_exec_var}"
+      eval "$post_exec_command"
+    fi
+  done <<< "$post_exec_vars"
+}
+
 function main {
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
@@ -138,6 +153,8 @@ function main {
     local -r tg_arg_and_commands="${tg_command}"
   fi
   run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
+
+  setup_post_exec
 
   local -r log_file="${terragrunt_log_file}"
   trap 'rm -rf ${log_file}' EXIT

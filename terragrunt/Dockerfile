@@ -13,11 +13,13 @@ RUN apt-get update && apt-get install -y \
     jq \
     unzip \
     wget \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # Create runner user
 RUN addgroup --system --gid 127 docker
 RUN useradd --system -u 1001 -g 127 -ms /bin/bash runner
+RUN usermod -aG sudo runner && echo 'runner ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER runner
 
 RUN mkdir -p /home/runner/.ssh
