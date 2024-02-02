@@ -13,8 +13,8 @@ dependency "module2" {
 }
 
 inputs = {
-  x = "1"
-  z = "xxxx"
-
-  path = get_repo_root()
+  str1  = "46521694"
+  num2  = 42
+  file1 = dependency.module1.outputs.file
+  file2 = dependency.module1.outputs.file
 }
