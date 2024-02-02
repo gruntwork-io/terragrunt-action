@@ -152,10 +152,8 @@ function main {
     export TERRAGRUNT_NON_INTERACTIVE=true
     export TF_INPUT=false
     export TF_IN_AUTOMATION=1
-  else
-    local -r tg_arg_and_commands="${tg_command}"
   fi
-  run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
+  run_terragrunt "${tg_dir}" "${tg_command}"
 
   setup_post_exec
 
