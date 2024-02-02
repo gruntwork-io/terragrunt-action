@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gruntwork-io/terratest/modules/files"
+	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +12,7 @@ import (
 )
 
 func TestActionIsExecuted(t *testing.T) {
+	t.Parallel()
 	tag := buildActionImage(t)
 	fixturePath := prepareFixture(t, "fixture-action-execution")
 
@@ -19,14 +21,15 @@ func TestActionIsExecuted(t *testing.T) {
 }
 
 func TestOutputPlanIsUsedInApply(t *testing.T) {
+	t.Parallel()
 	tag := buildActionImage(t)
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
 	output := runAction(t, tag, fixturePath, "run-all plan -out=plan.out")
-	assert.Contains(t, output, "Plan: 1 to add, 0 to change, 0 to destroy")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
 
 	output = runAction(t, tag, fixturePath, "run-all apply plan.out")
-	assert.Contains(t, output, "Apply complete! Resources: 1 added, 0 changed, 0 destroyed")
+	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
 }
 
 func runAction(t *testing.T, tag, fixturePath, command string) string {
@@ -45,7 +48,7 @@ func runAction(t *testing.T, tag, fixturePath, command string) string {
 
 func prepareFixture(t *testing.T, fixtureDir string) string {
 	path, err := files.CopyTerraformFolderToTemp(fixtureDir, "test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// chmod recursive for docker run
 
 	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
@@ -54,9 +57,9 @@ func prepareFixture(t *testing.T, fixtureDir string) string {
 		}
 		return os.Chmod(path, 0777)
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = os.Chmod(path, 0777)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	return path
 }
