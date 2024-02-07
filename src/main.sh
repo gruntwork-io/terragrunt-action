@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+[[ "${TRACE}" == "1" ]] && set -x
 
 # write log message with timestamp
 function log {
@@ -148,11 +149,11 @@ function main {
 
   # add auto approve for apply and destroy commands
   if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* || "$tg_command" == "run-all apply"* || "$tg_command" == "run-all destroy"* ]]; then
-    local -r tg_arg_and_commands="${tg_command} -auto-approve --terragrunt-non-interactive"
-  else
-    local -r tg_arg_and_commands="${tg_command}"
+    export TERRAGRUNT_NON_INTERACTIVE=true
+    export TF_INPUT=false
+    export TF_IN_AUTOMATION=1
   fi
-  run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
+  run_terragrunt "${tg_dir}" "${tg_command}"
 
   setup_post_exec
 
