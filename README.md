@@ -14,7 +14,7 @@ Supported GitHub action inputs:
 | tg_command        | Terragrunt command to execute                               |  `true`  |   plan/apply   |
 | tg_comment        | Add comment to Pull request with execution output           | `false`  |      0/1       |
 | tg_python         | Installs python3                                            | `false`  |      0/1       |
-| tg_python_version | Specify which version of Python3 to install (default: 3.10) | `false`  |      10/11       |
+| tg_python_version | Specify which version of Python3 to install (default: 3.10) | `false`  |      10/11     |
 
 ## Environment Variables
 
