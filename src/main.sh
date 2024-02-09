@@ -156,7 +156,7 @@ function main {
 
   if [[ "${tg_python}" == "1" ]]; then
     if ! [[ "${tg_python_version}" == "10" || "${tg_python_version}" == "11" ]]; then
-      log "ERROR: Only python3.10 and python3.11 are allowed"
+      log "ERROR: Only python3.10 and python3.11 are allowed. Check https://github.com/gruntwork-io/terragrunt-action?tab=readme-ov-file#inputs"
       exit 1 
     fi
     install_python "${tg_python_version}"
