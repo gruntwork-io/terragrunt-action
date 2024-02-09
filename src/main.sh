@@ -158,10 +158,10 @@ function main {
     exit 1
   fi
 
-  if [[ "${tg_python}" -eq 1 ]]; then
-    install_python "${tg_python_version}"
-    exit 0
-  fi
+  # if [[ "${tg_python}" -eq 1 ]]; then
+  #   install_python "${tg_python_version}"
+  #   exit 0
+  # fi
 
   setup_git
   setup_pre_exec
