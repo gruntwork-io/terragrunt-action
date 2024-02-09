@@ -154,7 +154,7 @@ function main {
     exit 1
   fi
 
-  if [[ "${tg_python}" -eq 1 ]]; then
+  if [[ "${tg_python}" == "1" ]]; then
     if ! [[ "${tg_python_version}" == "10" || "${tg_python_version}" == "11" ]]; then
       log "ERROR: Only python3.10 and python3.11 are allowed"
       exit 1 
