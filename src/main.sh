@@ -121,10 +121,6 @@ function setup_post_exec {
 # Install python 3.10 or 3.11
 function install_python {
   local -r version="$1"
-  if ! [[ "${version}" == "10" || "${version}" == "11" ]]; then
-    log "Only python3.10 and python3.11 are allowed"
-    return
-  fi
   sudo apt update
   sudo apt install python3."${version}" -y
   sudo update-alternatives --install /usr/bin/python3 python /usr/bin/python3."${version}" 1
@@ -158,10 +154,14 @@ function main {
     exit 1
   fi
 
-  # if [[ "${tg_python}" -eq 1 ]]; then
-  #   install_python "${tg_python_version}"
-  #   exit 0
-  # fi
+  if [[ "${tg_python}" -eq 1 ]]; then
+    if ! [[ "${tg_python_version}" == "10" || "${tg_python_version}" == "11" ]]; then
+      log "ERROR: Only python3.10 and python3.11 are allowed"
+      exit 1 
+    fi
+    install_python "${tg_python_version}"
+    exit 0
+  fi
 
   setup_git
   setup_pre_exec
