@@ -6,13 +6,15 @@ A GitHub Action for installing and running Terragrunt
 
 Supported GitHub action inputs:
 
-| Input Name | Description                                       | Required | Example values |
-|:-----------|:--------------------------------------------------|:--------:|:--------------:|
-| tf_version | Terraform version to be used in Action execution  |  `true`  |     1.4.6      | 
-| tg_version | Terragrunt version to be user in Action execution |  `true`  |     0.50.8     |
-| tg_dir     | Directory in which Terragrunt will be invoked     |  `true`  |      work      |
-| tg_command | Terragrunt command to execute                     |  `true`  |   plan/apply   |
-| tg_comment | Add comment to Pull request with execution output | `false`  |      0/1       |
+| Input Name        | Description                                                 | Required | Example values |
+|:------------------|:------------------------------------------------------------|:--------:|:--------------:|
+| tf_version        | Terraform version to be used in Action execution            |  `true`  |     1.4.6      | 
+| tg_version        | Terragrunt version to be user in Action execution           |  `true`  |     0.50.8     |
+| tg_dir            | Directory in which Terragrunt will be invoked               |  `true`  |      work      |
+| tg_command        | Terragrunt command to execute                               |  `true`  |   plan/apply   |
+| tg_comment        | Add comment to Pull request with execution output           | `false`  |      0/1       |
+| tg_python         | Installs python3                                            | `false`  |      0/1       |
+| tg_python_version | Specify which version of Python3 to install (default: 3.10) | `false`  |      10/11       |
 
 ## Environment Variables
 
