@@ -23,6 +23,14 @@ inputs:
     description: 'Include execution output as comment'
     default: '0'
     required: false
+  tg_python:
+    description: 'Install Python 3'
+    default: '0'
+    required: false
+  tg_python_version:
+    description: 'What version of python3 to install'
+    default: '10'
+    required: false
 outputs:
   tg_action_output:
     description: 'Terragrunt execution output'
