@@ -118,6 +118,20 @@ function setup_post_exec {
   done <<< "$post_exec_vars"
 }
 
+# Install python 3.10 or 3.11
+function install_python {
+  local -r version="$1"
+  if ! [[ "${version}" == "10" || "${version}" == "11" ]]; then
+    log "Only python3.10 and python3.11 are allowed"
+    return
+  fi
+  sudo apt update
+  sudo apt install python3."${version}" -y
+  sudo update-alternatives --install /usr/bin/python3 python /usr/bin/python3."${version}" 1
+  sudo update-alternatives --set python /usr/bin/python3."${version}"
+}
+
+
 function main {
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
@@ -126,7 +140,9 @@ function main {
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_dir=${INPUT_TG_DIR:-.}
-
+  local -r tg_python=${INPUT_TG_PYTHON}
+  local -r tg_python_version=${INPUT_TG_PYTHON_VERSION}
+  
   if [[ -z "${tf_version}" ]]; then
     log "tf_version is not set"
     exit 1
@@ -141,6 +157,12 @@ function main {
     log "tg_command is not set"
     exit 1
   fi
+
+  if [[ "${tg_python}" -eq 1 ]]; then
+    install_python "${tg_python_version}"
+    exit 0
+  fi
+
   setup_git
   setup_pre_exec
 
