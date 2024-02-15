@@ -83,9 +83,9 @@ function comment {
 
 function setup_git {
   # Avoid git permissions warnings
-  git config --global --add safe.directory /github/workspace
+  sudo git config --global --add safe.directory /github/workspace
   # Also trust any subfolder within workspace
-  git config --global --add safe.directory "*"
+  sudo git config --global --add safe.directory "*"
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
