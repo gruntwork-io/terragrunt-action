@@ -90,6 +90,7 @@ function setup_git {
 
 function setup_permissions {
   local -r dir="${1}"
+  sudo chown -R $(whoami) /github/workspace
   # Set permissions for the working directory
   if [[ -f "${dir}" ]]; then
     sudo chown -R $(whoami) "${dir}"
@@ -100,7 +101,7 @@ function setup_permissions {
     sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
   fi
   # set permissions for .terraform directories, if any
-  find . -name ".terraform" -exec sudo chmod -R 777 {} \;
+  sudo find . -name ".terraform" -exec chmod -R 777 {} \;
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
