@@ -33,7 +33,7 @@ function install_terraform {
     return
   fi
   tfenv install "${version}"
-  sudo tfenv use "${version}"
+  tfenv use "${version}"
 }
 
 # install passed terragrunt version
