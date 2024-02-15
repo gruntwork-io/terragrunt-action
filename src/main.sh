@@ -90,11 +90,15 @@ function setup_git {
 
 function setup_permissions {
   local -r dir="${1}"
-  # Set permissions for current user
-  sudo chown -R $(whoami) "${dir}"
-  sudo chmod -R o+rw "${dir}"
+  # Set permissions for the working directory
+  if [[ -f "${dir}" ]]; then
+    sudo chown -R $(whoami) "${dir}"
+    sudo chmod -R o+rw "${dir}"
+  fi
   # Set permissions for the output file
-  sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
+  if [[ -f "${GITHUB_OUTPUT}" ]]; then
+    sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
+  fi
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
