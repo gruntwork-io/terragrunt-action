@@ -147,6 +147,7 @@ function main {
     exit 1
   fi
   setup_git
+  setup_permissions
   setup_pre_exec
 
   install_terraform "${tf_version}"
