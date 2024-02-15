@@ -89,6 +89,9 @@ function setup_git {
 }
 
 function setup_permissions {
+  local working_dir=$1
+  # Set permissions for current user
+  sudo chown -R $(whoami) "${working_dir}"
   # Set permissions for the output file
   sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
 }
@@ -147,7 +150,7 @@ function main {
     exit 1
   fi
   setup_git
-  setup_permissions
+  setup_permissions "${tg_dir}"
   setup_pre_exec
 
   install_terraform "${tf_version}"
