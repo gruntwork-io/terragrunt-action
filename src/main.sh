@@ -88,6 +88,11 @@ function setup_git {
   sudo git config --global --add safe.directory "*"
 }
 
+function setup_permissions {
+  # Set permissions for the output file
+  sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
+}
+
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
 function setup_pre_exec {
   # Get all environment variables that match the pattern INPUT_PRE_EXEC_*
