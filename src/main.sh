@@ -167,6 +167,7 @@ function main {
 
     if [[ "${tg_add_approve}" == "1" ]]; then
       local approvePattern="^(apply|destroy|run-all apply|run-all destroy)"
+      # split command and arguments to insert -auto-approve
       if [[ $tg_arg_and_commands =~ $approvePattern ]]; then
           local matchedCommand="${BASH_REMATCH[0]}"
           local remainingArgs="${tg_arg_and_commands#$matchedCommand}"
