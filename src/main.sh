@@ -90,6 +90,7 @@ function setup_git {
 
 function setup_permissions {
   # Set permissions for current user
+  echo "Setting permissions for $(whoami) in $(pwd)"
   sudo chown -R $(whoami) .
   pwd
   sudo chmod -R 777 .
