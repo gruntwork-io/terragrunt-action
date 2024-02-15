@@ -171,7 +171,7 @@ function main {
       tg_arg_and_commands="${tg_arg_and_commands} -auto-approve"
     fi
   fi
-  run_terragrunt "${tg_dir}" "${tg_command}"
+  run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
   setup_permissions
   # setup permissions for the output files
   setup_post_exec
