@@ -133,6 +133,7 @@ function main {
   local -r tg_version=${INPUT_TG_VERSION}
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
+  local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-.}
 
   if [[ -z "${tf_version}" ]]; then
@@ -164,11 +165,13 @@ function main {
     export TF_INPUT=false
     export TF_IN_AUTOMATION=1
 
-    local approvePattern="^(apply|destroy|run-all apply|run-all destroy)"
-    if [[ $tg_arg_and_commands =~ $approvePattern ]]; then
-        local matchedCommand="${BASH_REMATCH[0]}"
-        local remainingArgs="${tg_arg_and_commands#$matchedCommand}"
-        tg_arg_and_commands="${matchedCommand} -auto-approve ${remainingArgs}"
+    if [[ "${tg_add_approve}" == "1" ]]; then
+      local approvePattern="^(apply|destroy|run-all apply|run-all destroy)"
+      if [[ $tg_arg_and_commands =~ $approvePattern ]]; then
+          local matchedCommand="${BASH_REMATCH[0]}"
+          local remainingArgs="${tg_arg_and_commands#$matchedCommand}"
+          tg_arg_and_commands="${matchedCommand} -auto-approve ${remainingArgs}"
+      fi
     fi
   fi
   run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
