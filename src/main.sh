@@ -91,7 +91,7 @@ function setup_git {
 function setup_permissions {
   # Set permissions for current user
   sudo chown -R $(whoami) .
-  sudo chmod -R o+rw .
+  sudo chmod -R o+rwx .
   # Set permissions for the output file
   sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
 }
