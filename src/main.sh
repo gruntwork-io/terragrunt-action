@@ -90,10 +90,8 @@ function setup_git {
 
 function setup_permissions {
   # Set permissions for current user
-  echo "Setting permissions for $(whoami) in $(pwd)"
   sudo chown -R $(whoami) .
-  pwd
-  sudo chmod -R 777 .
+  sudo chmod -R o+rw .
   # Set permissions for the output file
   sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
 }
@@ -160,10 +158,18 @@ function main {
   install_terragrunt "${tg_version}"
 
   # add auto approve for apply and destroy commands
+  local tg_arg_and_commands="${tg_command}"
   if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* || "$tg_command" == "run-all apply"* || "$tg_command" == "run-all destroy"* ]]; then
     export TERRAGRUNT_NON_INTERACTIVE=true
     export TF_INPUT=false
     export TF_IN_AUTOMATION=1
+    if [[ $tg_arg_and_commands == *" "* ]]; then
+      local -r prefix="${tg_arg_and_commands%% *}"
+      local -r suffix="${tg_arg_and_commands#* }"
+      tg_arg_and_commands="${prefix} -auto-approve ${suffix}"
+    else
+      tg_arg_and_commands="${tg_arg_and_commands} -auto-approve"
+    fi
   fi
   run_terragrunt "${tg_dir}" "${tg_command}"
   setup_permissions
