@@ -166,6 +166,7 @@ function main {
     export TF_IN_AUTOMATION=1
   fi
   run_terragrunt "${tg_dir}" "${tg_command}"
+  setup_permissions
   # setup permissions for the output files
   setup_post_exec
 
