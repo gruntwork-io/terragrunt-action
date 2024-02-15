@@ -33,7 +33,7 @@ function install_terraform {
     return
   fi
   tfenv install "${version}"
-  tfenv use "${version}"
+  sudo tfenv use "${version}"
 }
 
 # install passed terragrunt version
@@ -89,10 +89,9 @@ function setup_git {
 }
 
 function setup_permissions {
-  local working_dir=$1
   # Set permissions for current user
-  sudo chown -R $(whoami) "${working_dir}"
-  sudo chmod -R o+r "${working_dir}"
+  sudo chown -R $(whoami) .
+  sudo chmod -R o+r .
   # Set permissions for the output file
   sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
 }
@@ -151,7 +150,7 @@ function main {
     exit 1
   fi
   setup_git
-  setup_permissions "${tg_dir}"
+  setup_permissions
   setup_pre_exec
 
   install_terraform "${tf_version}"
@@ -165,7 +164,7 @@ function main {
   fi
   run_terragrunt "${tg_dir}" "${tg_command}"
   # setup permissions for the output files
-  setup_permissions "${tg_dir}"
+  setup_permissions
   setup_post_exec
 
   local -r log_file="${terragrunt_log_file}"
