@@ -163,12 +163,12 @@ function main {
     export TERRAGRUNT_NON_INTERACTIVE=true
     export TF_INPUT=false
     export TF_IN_AUTOMATION=1
-    if [[ $tg_arg_and_commands == *" "* ]]; then
-      local -r prefix="${tg_arg_and_commands%% *}"
-      local -r suffix="${tg_arg_and_commands#* }"
-      tg_arg_and_commands="${prefix} -auto-approve ${suffix}"
-    else
-      tg_arg_and_commands="${tg_arg_and_commands} -auto-approve"
+
+    local approvePattern="^(apply|destroy|run-all apply|run-all destroy)"
+    if [[ $tg_arg_and_commands =~ $approvePattern ]]; then
+        local matchedCommand="${BASH_REMATCH[0]}"
+        local remainingArgs="${tg_arg_and_commands#$matchedCommand}"
+        tg_arg_and_commands="${matchedCommand} -auto-approve ${remainingArgs}"
     fi
   fi
   run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
