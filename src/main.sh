@@ -101,7 +101,7 @@ function setup_permissions {
     sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
   fi
   # set permissions for .terraform directories, if any
-  sudo find . -name ".terraform*" -exec chmod -R 777 {} \;
+  sudo find /github/workspace -name ".terraform*" -exec chmod -R 777 {} \;
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
