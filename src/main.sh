@@ -151,6 +151,7 @@ function main {
   fi
   setup_git
   setup_permissions
+  trap setup_permissions EXIT
   setup_pre_exec
 
   install_terraform "${tf_version}"
@@ -164,7 +165,6 @@ function main {
   fi
   run_terragrunt "${tg_dir}" "${tg_command}"
   # setup permissions for the output files
-  setup_permissions
   setup_post_exec
 
   local -r log_file="${terragrunt_log_file}"
