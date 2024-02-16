@@ -83,9 +83,25 @@ function comment {
 
 function setup_git {
   # Avoid git permissions warnings
-  git config --global --add safe.directory /github/workspace
+  sudo git config --global --add safe.directory /github/workspace
   # Also trust any subfolder within workspace
-  git config --global --add safe.directory "*"
+  sudo git config --global --add safe.directory "*"
+}
+
+function setup_permissions {
+  local -r dir="${1}"
+  sudo chown -R $(whoami) /github/workspace
+  # Set permissions for the working directory
+  if [[ -f "${dir}" ]]; then
+    sudo chown -R $(whoami) "${dir}"
+    sudo chmod -R o+rw "${dir}"
+  fi
+  # Set permissions for the output file
+  if [[ -f "${GITHUB_OUTPUT}" ]]; then
+    sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
+  fi
+  # set permissions for .terraform directories, if any
+  sudo find /github/workspace -name ".terraform*" -exec chmod -R 777 {} \;
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
@@ -125,6 +141,7 @@ function main {
   local -r tg_version=${INPUT_TG_VERSION}
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
+  local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-.}
 
   if [[ -z "${tf_version}" ]]; then
@@ -142,19 +159,33 @@ function main {
     exit 1
   fi
   setup_git
+  setup_permissions "${tg_dir}"
+  trap 'setup_permissions $tg_dir ' EXIT
   setup_pre_exec
 
   install_terraform "${tf_version}"
   install_terragrunt "${tg_version}"
 
   # add auto approve for apply and destroy commands
+  local tg_arg_and_commands="${tg_command}"
   if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* || "$tg_command" == "run-all apply"* || "$tg_command" == "run-all destroy"* ]]; then
     export TERRAGRUNT_NON_INTERACTIVE=true
     export TF_INPUT=false
     export TF_IN_AUTOMATION=1
-  fi
-  run_terragrunt "${tg_dir}" "${tg_command}"
 
+    if [[ "${tg_add_approve}" == "1" ]]; then
+      local approvePattern="^(apply|destroy|run-all apply|run-all destroy)"
+      # split command and arguments to insert -auto-approve
+      if [[ $tg_arg_and_commands =~ $approvePattern ]]; then
+          local matchedCommand="${BASH_REMATCH[0]}"
+          local remainingArgs="${tg_arg_and_commands#$matchedCommand}"
+          tg_arg_and_commands="${matchedCommand} -auto-approve ${remainingArgs}"
+      fi
+    fi
+  fi
+  run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
+  setup_permissions "${tg_dir}"
+  # setup permissions for the output files
   setup_post_exec
 
   local -r log_file="${terragrunt_log_file}"

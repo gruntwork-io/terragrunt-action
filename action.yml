@@ -23,6 +23,10 @@ inputs:
     description: 'Include execution output as comment'
     default: '0'
     required: false
+  tg_add_approve:
+    description: 'Add -auto-approve to commands which require changes to be applied'
+    default: '1'
+    required: false
 outputs:
   tg_action_output:
     description: 'Terragrunt execution output'
