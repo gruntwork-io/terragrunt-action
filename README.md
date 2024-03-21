@@ -115,3 +115,41 @@ Example of passing custom code before running Terragrunt:
     tg_command: 'plan'
 ...
 ```
+
+Example of using GitHub cache for Terraform plugins (providers):
+
+```yaml
+...
+env:
+  tf_version: 1.5.7
+  tg_version: 0.53.2
+  working_dir: project
+  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Create Terraform Plugin Cache Dir
+        run: mkdir -p $TF_PLUGIN_CACHE_DIR
+
+      - name: Terraform Plugin Cache
+        uses: actions/cache@v4.0.1
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: ${{ runner.os }}-terraform-plugin-cache-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Plan
+        uses: gruntwork-io/terragrunt-action@v2
+        env:
+          TF_PLUGIN_CACHE_DIR: /github/workspace/.terraform.d/plugin-cache
+        with:
+          tf_version: ${{ env.tf_version }}
+          tg_version: ${{ env.tg_version }}
+          tg_dir: ${{ env.working_dir }}
+          tg_command: plan
+...
+```
