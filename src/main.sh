@@ -138,9 +138,9 @@ function setup_post_exec {
 function install_python {
   local -r version="$1"
   sudo apt update
-  sudo apt install python3."${version}" -y
-  sudo update-alternatives --install /usr/bin/python3 python /usr/bin/python3."${version}" 1
-  sudo update-alternatives --set python /usr/bin/python3."${version}"
+  sudo apt install python"${version}" -y
+  sudo update-alternatives --install /usr/bin/python3 python /usr/bin/python"${version}" 1
+  sudo update-alternatives --set python /usr/bin/python"${version}"
 }
 
 
@@ -172,7 +172,7 @@ function main {
   fi
 
   if [[ "${tg_install_python_3}" == "1" ]]; then
-    if ! [[ "${tg_python_version}" == "10" || "${tg_python_version}" == "11" ]]; then
+    if ! [[ "${tg_python_version}" == "3.10" || "${tg_python_version}" == "3.11" ]]; then
       log "ERROR: Only python3.10 and python3.11 are allowed. Check https://github.com/gruntwork-io/terragrunt-action?tab=readme-ov-file#inputs"
       exit 1 
     fi
