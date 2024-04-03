@@ -6,15 +6,16 @@ A GitHub Action for installing and running Terragrunt
 
 Supported GitHub action inputs:
 
-| Input Name        | Description                                                 | Required | Example values |
-|:------------------|:------------------------------------------------------------|:--------:|:--------------:|
-| tf_version        | Terraform version to be used in Action execution            |  `true`  |     1.4.6      | 
-| tg_version        | Terragrunt version to be user in Action execution           |  `true`  |     0.50.8     |
-| tg_dir            | Directory in which Terragrunt will be invoked               |  `true`  |      work      |
-| tg_command        | Terragrunt command to execute                               |  `true`  |   plan/apply   |
-| tg_comment        | Add comment to Pull request with execution output           | `false`  |      0/1       |
-| tg_python         | Installs python3                                            | `false`  |      0/1       |
-| tg_python_version | Specify which version of Python3 to install (default: 3.10) | `false`  |      10/11     |
+| Input Name          | Description                                                       | Required | Example values |
+|:--------------------|:------------------------------------------------------------------|:--------:|:--------------:|
+| tf_version          | Terraform version to be used in Action execution                  |  `true`  |     1.4.6      | 
+| tg_version          | Terragrunt version to be user in Action execution                 |  `true`  |     0.50.8     |
+| tg_dir              | Directory in which Terragrunt will be invoked                     |  `true`  |     work       |
+| tg_command          | Terragrunt command to execute                                     |  `true`  |     plan/apply |
+| tg_comment          | Add comment to Pull request with execution output                 | `false`  |     0/1        |
+| tg_add_approve      | Automatically add "-auto-approve" to commands, enabled by default | `false`  |     0/1        |
+| tg_install_python_3 | Installs python3                                                  | `false`  |     0/1        |
+| tg_python_version   | Specify which version of Python3 to install (default: 3.10)       | `false`  |     3.10/3.11  |
 
 ## Environment Variables
 
@@ -114,5 +115,43 @@ Example of passing custom code before running Terragrunt:
       git config --global --list
   with:
     tg_command: 'plan'
+...
+```
+
+Example of using GitHub cache for Terraform plugins (providers):
+
+```yaml
+...
+env:
+  tf_version: 1.5.7
+  tg_version: 0.53.2
+  working_dir: project
+  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Create Terraform Plugin Cache Dir
+        run: mkdir -p $TF_PLUGIN_CACHE_DIR
+
+      - name: Terraform Plugin Cache
+        uses: actions/cache@v4.0.1
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: ${{ runner.os }}-terraform-plugin-cache-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Plan
+        uses: gruntwork-io/terragrunt-action@v2
+        env:
+          TF_PLUGIN_CACHE_DIR: /github/workspace/.terraform.d/plugin-cache
+        with:
+          tf_version: ${{ env.tf_version }}
+          tg_version: ${{ env.tg_version }}
+          tg_dir: ${{ env.working_dir }}
+          tg_command: plan
 ...
 ```

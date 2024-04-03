@@ -23,13 +23,17 @@ inputs:
     description: 'Include execution output as comment'
     default: '0'
     required: false
-  tg_python:
-    description: 'Install Python 3'
+  tg_add_approve:
+    description: 'Add -auto-approve to commands which require changes to be applied'
+    default: '1'
+    required: false
+  tg_install_python_3:
+    description: 'Wheteher or not to install Python 3'
     default: '0'
     required: false
   tg_python_version:
     description: 'What version of python3 to install'
-    default: '10'
+    default: '3.10'
     required: false
 outputs:
   tg_action_output:

@@ -32,6 +32,41 @@ func TestOutputPlanIsUsedInApply(t *testing.T) {
 	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
 }
 
+func TestRunAllIsExecuted(t *testing.T) {
+	t.Parallel()
+	tag := buildActionImage(t)
+	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+
+	output := runAction(t, tag, fixturePath, "run-all plan")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
+
+	output = runAction(t, tag, fixturePath, "run-all apply")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
+
+	output = runAction(t, tag, fixturePath, "run-all destroy")
+	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy")
+	assert.Contains(t, output, "Destroy complete! Resources: 1 destroyed")
+}
+
+func TestAutoApproveDelete(t *testing.T) {
+	t.Parallel()
+	tag := buildActionImage(t)
+	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+
+	output := runAction(t, tag, fixturePath, "run-all plan -out=plan.out")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
+
+	output = runAction(t, tag, fixturePath, "run-all apply plan.out")
+	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
+
+	// run destroy with auto-approve
+	output = runAction(t, tag, fixturePath, "run-all plan -destroy -out=destroy.out")
+	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy")
+
+	output = runAction(t, tag, fixturePath, "run-all apply -destroy destroy.out")
+	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed")
+}
+
 func runAction(t *testing.T, tag, fixturePath, command string) string {
 	opts := &docker.RunOptions{
 		EnvironmentVariables: []string{
