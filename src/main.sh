@@ -153,7 +153,7 @@ function main {
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-.}
-  local -r tg_install_python_3=${INPUT_TG_PYTHON}
+  local -r tg_install_python_3=${INPUT_TG_INSTALL_PYTHON_3}
   local -r tg_python_version=${INPUT_TG_PYTHON_VERSION}
   
   if [[ -z "${tf_version}" ]]; then
