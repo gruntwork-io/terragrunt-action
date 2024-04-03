@@ -177,7 +177,6 @@ function main {
       exit 1 
     fi
     install_python "${tg_python_version}"
-    exit 0
   fi
 
   setup_git
