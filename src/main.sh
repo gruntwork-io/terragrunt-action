@@ -218,6 +218,10 @@ ${terragrunt_output}
   tg_action_output=$(clean_multiline_text "${terragrunt_output}")
   echo "tg_action_output=${tg_action_output}" >> "${GITHUB_OUTPUT}"
 
+  local tg_output
+  tg_output=$(terragrunt output -json 2>/dev/null | jq -c '.')
+  echo "tg_output=${tg_output}" >> "${GITHUB_OUTPUT}"
+
   exit $exit_code
 }
 

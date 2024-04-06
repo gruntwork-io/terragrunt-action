@@ -1,37 +1,39 @@
-name: 'Gruntwork Terragrunt'
-description: 'Setup and execute Terragrunt.'
-author:  'Gruntwork'
+name: "Gruntwork Terragrunt"
+description: "Setup and execute Terragrunt."
+author: "Gruntwork"
 
 branding:
-  icon: 'award'
-  color: 'purple'
+  icon: "award"
+  color: "purple"
 
 inputs:
   tg_version:
-    description: 'Terragrunt version to install.'
+    description: "Terragrunt version to install."
     required: true
   tf_version:
-    description: 'Terraform version to install.'
+    description: "Terraform version to install."
     required: true
   tg_command:
-    description: 'Terragrunt command to execute.'
+    description: "Terragrunt command to execute."
     required: true
   tg_dir:
-    description: 'Directory in which Terragrunt will be executed.'
+    description: "Directory in which Terragrunt will be executed."
     required: true
   tg_comment:
-    description: 'Include execution output as comment'
-    default: '0'
+    description: "Include execution output as comment"
+    default: "0"
     required: false
   tg_add_approve:
-    description: 'Add -auto-approve to commands which require changes to be applied'
-    default: '1'
+    description: "Add -auto-approve to commands which require changes to be applied"
+    default: "1"
     required: false
 outputs:
   tg_action_output:
-    description: 'Terragrunt execution output'
+    description: "Terragrunt execution output"
   tg_action_exit_code:
-    description: 'Terragrunt exit code'
+    description: "Terragrunt exit code"
+  tg_output:
+    description: "Terragrunt output"
 runs:
-  using: 'docker'
-  image: './Dockerfile'
+  using: "docker"
+  image: "./Dockerfile"
