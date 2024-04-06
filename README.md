@@ -35,6 +35,7 @@ Outputs of GitHub action:
 |:--------------------|:--------------------------------|
 | tg_action_exit_code | Terragrunt exit code            |
 | tg_action_output    | Terragrunt output as plain text |
+| tg_output           | Terragrunt output in JSON format|
 
 ## Usage
 
