@@ -5,6 +5,7 @@ env: &env
     GO_VERSION: 1.21.1
     GO111MODULE: auto
     MISE_VERSION: "v2024.4.0"
+    TERRATEST_LOG_PARSER_VERSION: v0.41.01
 
 defaults: &defaults
   machine:
