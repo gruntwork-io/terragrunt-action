@@ -1,6 +1,6 @@
 # Dockerfile used in execution of Github Action
 FROM gruntwork/terragrunt:0.0.2
-label maintainer "Gruntwork <info@gruntwork.io>"
+LABEL maintainer "Gruntwork <info@gruntwork.io>"
 
 ARG MISE_VERSION_INSTALL=v2024.4.0
 

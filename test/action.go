@@ -9,7 +9,6 @@ import (
 func buildActionImage(t *testing.T) string {
 	tag := "terragrunt-action:" + random.UniqueId()
 	buildOptions := &docker.BuildOptions{
-		Architectures: []string{"linux/amd64"},
 		Tags: []string{tag},
 	}
 	docker.Build(t, "..", buildOptions)
