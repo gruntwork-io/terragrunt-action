@@ -77,7 +77,7 @@ jobs:
               --path test \
               --timeout 60m \
               --packages . \
-              | (tee /tmp/logs/all.log || true) \
+              | (tee /tmp/logs/all.log || true)
       - store_results
       - run:
           name: Post upgrade test results
