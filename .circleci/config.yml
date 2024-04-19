@@ -75,7 +75,7 @@ jobs:
             mkdir -p /tmp/logs
             run-go-tests \
               --path test \
-              --timeout 60m  
+              --timeout 60m \
               --packages . \
               | (tee /tmp/logs/all.log || true) \
       - store_results
