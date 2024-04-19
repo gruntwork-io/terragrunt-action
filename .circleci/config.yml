@@ -66,9 +66,20 @@ jobs:
           at: /home/circleci
       - run:
           <<: *install_gruntwork_utils
-      - run: |
-          run-go-tests --path test --timeout 60m  --packages . | (tee /tmp/logs/all.log || true)
+      - run: 
+          name: Run tests
+          command: |
+            mkdir -p /tmp/logs
+            run-go-tests \
+              --path test \
+              --timeout 60m  
+              --packages . \
+              | (tee /tmp/logs/all.log || true) \
       - store_results
+      - run:
+          name: Post upgrade test results
+          command: ./.circleci/post-upgrade-test-results.sh
+          when: always
 #----------------------------------------------------------------------------------------------------------------------
 # WORKFLOWS
 #----------------------------------------------------------------------------------------------------------------------
