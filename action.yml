@@ -12,7 +12,8 @@ inputs:
     required: true
   tf_version:
     description: 'Terraform version to install.'
-    required: true
+  tofu_version:
+    description: 'OpenTofu version to install.'
   tg_command:
     description: 'Terragrunt command to execute.'
     required: true

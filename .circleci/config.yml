@@ -1,9 +1,10 @@
 env: &env
   environment:
     GRUNTWORK_INSTALLER_VERSION: v0.0.36
-    MODULE_CI_VERSION: v0.46.0
+    MODULE_CI_VERSION: v0.54.3
     GO_VERSION: 1.21.1
     GO111MODULE: auto
+    MISE_VERSION: "v2024.4.0"
 
 defaults: &defaults
   machine:
@@ -17,13 +18,15 @@ install_gruntwork_utils: &install_gruntwork_utils
     curl -Ls https://raw.githubusercontent.com/gruntwork-io/gruntwork-installer/master/bootstrap-gruntwork-installer.sh | bash /dev/stdin --version "${GRUNTWORK_INSTALLER_VERSION}"
     gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
     gruntwork-install --module-name "kubernetes-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
+    gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
 
-    echo "Installing Go version $GO_VERSION"
-    curl -O --silent --location --fail --show-error "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz"
-    sudo rm -rf /usr/local/go
-    sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
-    sudo ln -s /usr/local/go/bin/go /usr/bin/go
-    echo "The installed version of Go is now $(go version)"
+    configure-environment-for-gruntwork-module \
+      --go-version "${GO_VERSION}" \
+      --mise-version "${MISE_VERSION}" \
+      --terraform-version "NONE" \
+      --terragrunt-version "NONE" \
+      --packer-version "NONE" \
+      --kubectl-version "NONE"
 
 version: 2
 jobs:
