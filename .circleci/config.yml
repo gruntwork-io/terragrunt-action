@@ -1,3 +1,4 @@
+version: 2
 env: &env
   environment:
     GRUNTWORK_INSTALLER_VERSION: v0.0.36
@@ -27,37 +28,50 @@ install_gruntwork_utils: &install_gruntwork_utils
       --terragrunt-version "NONE" \
       --packer-version "NONE" \
       --kubectl-version "NONE"
-
-version: 2
+# ---------------------------------------------------------------------------------------------------------------------
+# REUSABLE STEPS
+# ---------------------------------------------------------------------------------------------------------------------
+commands:
+  store_results:
+    description: Store test results for easy viewing.
+    steps:
+      - run:
+          command: terratest_log_parser --testlog /tmp/logs/all.log --outputdir /tmp/logs
+          when: always
+      - store_artifacts:
+          path: /tmp/logs
+      - store_test_results:
+          path: /tmp/logs
+#----------------------------------------------------------------------------------------------------------------------
+# BUILD JOBS
+#----------------------------------------------------------------------------------------------------------------------
 jobs:
   setup:
     <<: *env
     docker:
       - image: cimg/python:3.10.2
-
     steps:
       - checkout
-
       # Install gruntwork utilities
       - run:
           <<: *install_gruntwork_utils
-
       - persist_to_workspace:
           root: /home/circleci
           paths:
             - project
-
   tests:
     <<: *defaults
     steps:
       - attach_workspace:
           at: /home/circleci
-
       - run:
           <<: *install_gruntwork_utils
       - run: |
           run-go-tests --path test --timeout 60m  --packages . | (tee /tmp/logs/all.log || true)
-
+      - store_results
+#----------------------------------------------------------------------------------------------------------------------
+# WORKFLOWS
+#----------------------------------------------------------------------------------------------------------------------
 workflows:
   version: 2
   build-and-test:
@@ -82,4 +96,3 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-
