@@ -1,42 +1,16 @@
 env: &env
   environment:
-    GRUNTWORK_INSTALLER_VERSION: v0.0.36
-    MODULE_CI_VERSION: v0.54.3
-    GO_VERSION: 1.21.1
     GO111MODULE: auto
-    MISE_VERSION: "v2024.4.0"
     TERRATEST_LOG_PARSER_VERSION: v0.41.01
-
 defaults: &defaults
-  machine:
-    enabled: true
-    image: ubuntu-2004:2022.10.1
+  docker:
+    - image: 087285199408.dkr.ecr.us-east-1.amazonaws.com/circle-ci-test-image-base:go1.21.9-tf1.5-tg39.1-pck1.8-ci54.0
   <<: *env
-
-install_gruntwork_utils: &install_gruntwork_utils
-  name: install gruntwork utils
-  command: |
-    curl -Ls https://raw.githubusercontent.com/gruntwork-io/gruntwork-installer/master/bootstrap-gruntwork-installer.sh | bash /dev/stdin --version "${GRUNTWORK_INSTALLER_VERSION}"
-    gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
-    gruntwork-install --module-name "kubernetes-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
-    gruntwork-install --binary-name "terratest_log_parser" --repo "https://github.com/gruntwork-io/terratest" --tag "${TERRATEST_LOG_PARSER_VERSION}"
-    gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
-
-    configure-environment-for-gruntwork-module \
-      --go-version "${GO_VERSION}" \
-      --mise-version "${MISE_VERSION}" \
-      --terraform-version "NONE" \
-      --terragrunt-version "NONE" \
-      --packer-version "NONE" \
-      --kubectl-version "NONE"
 run_precommit: &run_precommit
   # Fail the build if the pre-commit hooks don't pass. Note: if you run $ pre-commit install locally within this repo, these hooks will
   # execute automatically every time before you commit, ensuring the build never fails at this step!
   name: run pre-commit hooks
   command: |
-    pip install pre-commit~=2.9
-    go get golang.org/x/tools/cmd/goimports
-    export GOPATH=~/go/bin && export PATH=$PATH:$GOPATH
     pre-commit install
     pre-commit run --all-files
 version: 2.1
@@ -60,35 +34,18 @@ commands:
 jobs:
   precommit:
     <<: *defaults
-    docker: 
-      - image: cimg/python:3.10.2
     steps:
       - checkout
       # Fail the build if the pre-commit hooks don't pass. Note: if you run pre-commit install locally, these hooks will
       # execute automatically every time before you commit, ensuring the build never fails at this step!
       - run:
           <<: *run_precommit
-  setup:
-    <<: *env
-    docker:
-      - image: cimg/python:3.10.2
-    steps:
-      - checkout
-      # Install gruntwork utilities
-      - run:
-          <<: *install_gruntwork_utils
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - project
   tests:
     <<: *defaults
     steps:
       - checkout
       - attach_workspace:
           at: /home/circleci
-      - run:
-          <<: *install_gruntwork_utils
       - run: 
           name: Run tests
           command: |
@@ -117,16 +74,6 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-      - setup:
-          context:
-            - AWS__PHXDEVOPS__circle-ci-test
-            - GITHUB__PAT__gruntwork-ci
-          requires:
-            - precommit
-          filters:
-            tags:
-              only: /^v.*/
-
       - tests:
           context:
             - AWS__PHXDEVOPS__circle-ci-test
@@ -135,7 +82,6 @@ workflows:
             - SLACK__WEBHOOK__refarch-deployer-test
             - SLACK__CHANNEL__test-workflow-approvals
           requires:
-            - setup
             - precommit
           filters:
             tags:
