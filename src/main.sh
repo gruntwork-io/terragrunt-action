@@ -195,6 +195,10 @@ function main {
 
   install_terragrunt "${tg_version}"
 
+  pwd
+  mise -v
+  echo $PATH
+
   # add auto approve for apply and destroy commands
   local tg_arg_and_commands="${tg_command}"
   if [[ -n "${tofu_version}" ]]; then
