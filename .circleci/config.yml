@@ -57,7 +57,6 @@ commands:
 jobs:
   precommit:
     <<: *defaults
-    resource_class: small
     steps:
       - checkout
       # Fail the build if the pre-commit hooks don't pass. Note: if you run pre-commit install locally, these hooks will
