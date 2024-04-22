@@ -88,10 +88,6 @@ jobs:
               --packages . \
               | (tee /tmp/logs/all.log || true)
       - store_results
-      - run:
-          name: Post upgrade test results
-          command: ./.circleci/post-upgrade-test-results.sh
-          when: always
 #----------------------------------------------------------------------------------------------------------------------
 # WORKFLOWS
 #----------------------------------------------------------------------------------------------------------------------
