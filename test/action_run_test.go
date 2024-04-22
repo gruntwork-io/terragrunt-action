@@ -1,11 +1,12 @@
 package test
 
 import (
-	"github.com/gruntwork-io/terratest/modules/files"
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/gruntwork-io/terratest/modules/files"
+	"github.com/stretchr/testify/require"
 
 	"github.com/gruntwork-io/terratest/modules/docker"
 	"github.com/stretchr/testify/assert"
@@ -16,13 +17,13 @@ func TestTerragruntAction(t *testing.T) {
 	tag := buildActionImage(t)
 
 	testCases := []struct {
-		iac_name		string
-		iac_type		string
-		iac_version	string
-		tg_version	string
+		iac_name    string
+		iac_type    string
+		iac_version string
+		tg_version  string
 	}{
-		{"Terraform","TF","1.4.6","0.46.3"},
-		{"OpenTofu","TOFU","1.6.0","0.53.3"},
+		{"Terraform", "TF", "1.4.6", "0.46.3"},
+		{"OpenTofu", "TOFU", "1.6.0", "0.53.3"},
 	}
 
 	for _, tc := range testCases {
@@ -30,19 +31,19 @@ func TestTerragruntAction(t *testing.T) {
 
 		t.Run(tc.iac_name, func(t *testing.T) {
 			t.Parallel()
-			t.Run("testActionIsExecuted", func(t *testing.T){
+			t.Run("testActionIsExecuted", func(t *testing.T) {
 				t.Parallel()
 				testActionIsExecuted(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
 			})
-			t.Run("testOutputPlanIsUsedInApply", func(t *testing.T){
+			t.Run("testOutputPlanIsUsedInApply", func(t *testing.T) {
 				t.Parallel()
 				testOutputPlanIsUsedInApply(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
 			})
-			t.Run("testRunAllIsExecute", func(t *testing.T){
+			t.Run("testRunAllIsExecute", func(t *testing.T) {
 				t.Parallel()
 				testRunAllIsExecuted(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
 			})
-			t.Run("testAutoApproveDelete", func(t *testing.T){
+			t.Run("testAutoApproveDelete", func(t *testing.T) {
 				t.Parallel()
 				testAutoApproveDelete(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
 			})
@@ -54,7 +55,7 @@ func testActionIsExecuted(t *testing.T, iac_type string, iac_name string, iac_ve
 	fixturePath := prepareFixture(t, "fixture-action-execution")
 
 	outputTF := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the " + iac_name)
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+iac_name)
 }
 
 func testOutputPlanIsUsedInApply(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
