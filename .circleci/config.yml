@@ -38,7 +38,7 @@ jobs:
   precommit:
     <<: *env
     docker:
-      - image: cimg/python:3.10.2
+      - image: 087285199408.dkr.ecr.us-east-1.amazonaws.com/circle-ci-test-image-base:go1.21.9-tf1.5-tg39.1-pck1.8-ci54.0
     steps:
       - checkout
       # Fail the build if the pre-commit hooks don't pass. Note: if you run pre-commit install locally, these hooks will
