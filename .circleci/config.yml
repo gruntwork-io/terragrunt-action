@@ -1,6 +1,10 @@
 env: &env
   environment:
     GO111MODULE: auto
+    GRUNTWORK_INSTALLER_VERSION: v0.0.36
+    MODULE_CI_VERSION: v0.54.0
+    GO_VERSION: 1.21.1
+    TERRATEST_LOG_PARSER_VERSION: v0.37.0
 defaults: &defaults
   machine:
     enabled: true
@@ -16,6 +20,13 @@ run_precommit: &run_precommit
     export GOPATH=~/go/bin && export PATH=$PATH:$GOPATH
     pre-commit install
     pre-commit run --all-files
+install_gruntwork_utils: &install_gruntwork_utils
+  name: install gruntwork utils
+  command: |
+    curl -Ls https://raw.githubusercontent.com/gruntwork-io/gruntwork-installer/master/bootstrap-gruntwork-installer.sh | bash /dev/stdin --version "${GRUNTWORK_INSTALLER_VERSION}"
+    gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
+    gruntwork-install --module-name "git-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
+    gruntwork-install --binary-name "terratest_log_parser" --repo "https://github.com/gruntwork-io/terratest" --tag "${TERRATEST_LOG_PARSER_VERSION}"
 version: 2.1
 # ---------------------------------------------------------------------------------------------------------------------
 # REUSABLE STEPS
@@ -51,6 +62,8 @@ jobs:
       - checkout
       - attach_workspace:
           at: /home/circleci
+      - run:
+          <<: *install_gruntwork_utils
       - run: 
           name: Run tests
           command: |
