@@ -60,6 +60,8 @@ commands:
 jobs:
   precommit:
     <<: *defaults
+    docker: 
+      - image: cimg/python:3.10.2
     steps:
       - checkout
       # Fail the build if the pre-commit hooks don't pass. Note: if you run pre-commit install locally, these hooks will
