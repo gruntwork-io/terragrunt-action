@@ -5,7 +5,6 @@ env: &env
     MODULE_CI_VERSION: v0.54.0
     TERRATEST_LOG_PARSER_VERSION: v0.37.0
     GOLANG_VERSION: 1.21.1
-    GH_VERSION: 2.10.1
 defaults: &defaults
   machine:
     enabled: true
@@ -31,14 +30,6 @@ install_gruntwork_utils: &install_gruntwork_utils
       --terragrunt-version "NONE" \
       --packer-version "NONE" \
       --go-version ${GOLANG_VERSION}
-install_gh_cli: &install_gh_cli
-  name: Install gh CLI
-  command: |
-    curl -Lo gh.tar.gz "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz"
-    tar -xf gh.tar.gz
-    sudo mv "gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin
-    sudo chmod +x /usr/local/bin/gh
-    echo 'export GITHUB_TOKEN="$GITHUB_OAUTH_TOKEN"' >> $BASH_ENV
 version: 2.1
 # ---------------------------------------------------------------------------------------------------------------------
 # REUSABLE STEPS
