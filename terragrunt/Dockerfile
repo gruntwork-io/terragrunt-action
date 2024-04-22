@@ -30,10 +30,10 @@ RUN mkdir -p "${HOME}/mise" \
     && wget -q "https://github.com/jdx/mise/releases/download/${MISE_VERSION_INSTALL}/mise-${MISE_VERSION_INSTALL}-linux-x64" -O "/${HOME}/mise/mise" \
     && chmod u+x "${HOME}/mise/mise"
 
-ENV MISE_CONFIG_DIR=~/.config/mise
-ENV MISE_STATE_DIR=~/.local/state/mise
-ENV MISE_DATA_DIR=~/.local/share/mise
-ENV MISE_CACHE_DIR=~/.cache/mise
+ENV MISE_CONFIG_DIR=${HOME}/.config/mise
+ENV MISE_STATE_DIR=${HOME}/.local/state/mise
+ENV MISE_DATA_DIR=${HOME}/.local/share/mise
+ENV MISE_CACHE_DIR=${HOME}/.cache/mise
 ENV ASDF_HASHICORP_TERRAFORM_VERSION_FILE=.terraform-version
 
 # Running action as runner user
