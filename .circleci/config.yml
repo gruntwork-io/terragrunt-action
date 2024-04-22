@@ -5,6 +5,7 @@ env: &env
     MODULE_CI_VERSION: v0.54.0
     TERRATEST_LOG_PARSER_VERSION: v0.37.0
     GOLANG_VERSION: 1.21.1
+    GH_VERSION: 2.10.1
 defaults: &defaults
   machine:
     enabled: true
