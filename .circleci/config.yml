@@ -5,6 +5,7 @@ env: &env
     MODULE_CI_VERSION: v0.54.0
     GO_VERSION: 1.21.1
     TERRATEST_LOG_PARSER_VERSION: v0.37.0
+    GOLANG_VERSION: 1.21.1
 defaults: &defaults
   machine:
     enabled: true
@@ -15,9 +16,6 @@ run_precommit: &run_precommit
   # execute automatically every time before you commit, ensuring the build never fails at this step!
   name: run pre-commit hooks
   command: |
-    pip install pre-commit~=2.9
-    go get golang.org/x/tools/cmd/goimports
-    export GOPATH=~/go/bin && export PATH=$PATH:$GOPATH
     pre-commit install
     pre-commit run --all-files
 install_gruntwork_utils: &install_gruntwork_utils
@@ -27,6 +25,12 @@ install_gruntwork_utils: &install_gruntwork_utils
     gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
     gruntwork-install --module-name "git-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
     gruntwork-install --binary-name "terratest_log_parser" --repo "https://github.com/gruntwork-io/terratest" --tag "${TERRATEST_LOG_PARSER_VERSION}"
+    configure-environment-for-gruntwork-module \
+      --mise-version "NONE" \
+      --terraform-version "NONE" \
+      --terragrunt-version "NONE" \
+      --packer-version "NONE" \
+      --go-version ${GOLANG_VERSION}
 version: 2.1
 # ---------------------------------------------------------------------------------------------------------------------
 # REUSABLE STEPS
