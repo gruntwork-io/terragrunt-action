@@ -2,14 +2,18 @@ env: &env
   environment:
     GO111MODULE: auto
 defaults: &defaults
-  docker:
-    - image: 087285199408.dkr.ecr.us-east-1.amazonaws.com/circle-ci-test-image-base:go1.21.9-tf1.5-tg39.1-pck1.8-ci54.0
+  machine:
+    enabled: true
+    image: ubuntu-2004:2022.10.1
   <<: *env
 run_precommit: &run_precommit
   # Fail the build if the pre-commit hooks don't pass. Note: if you run $ pre-commit install locally within this repo, these hooks will
   # execute automatically every time before you commit, ensuring the build never fails at this step!
   name: run pre-commit hooks
   command: |
+    pip install pre-commit~=2.9
+    go get golang.org/x/tools/cmd/goimports
+    export GOPATH=~/go/bin && export PATH=$PATH:$GOPATH
     pre-commit install
     pre-commit run --all-files
 version: 2.1
@@ -33,6 +37,8 @@ commands:
 jobs:
   precommit:
     <<: *defaults
+    docker:
+      - image: cimg/python:3.10.2
     steps:
       - checkout
       # Fail the build if the pre-commit hooks don't pass. Note: if you run pre-commit install locally, these hooks will
@@ -41,8 +47,6 @@ jobs:
           <<: *run_precommit
   tests:
     <<: *defaults
-    docker:
-      - image: ubuntu-2004:2022.10.1
     steps:
       - checkout
       - attach_workspace:
