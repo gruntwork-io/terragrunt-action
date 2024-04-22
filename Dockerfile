@@ -1,5 +1,5 @@
 # Dockerfile used in execution of Github Action
-FROM arsci/tg:v0.1
+FROM arsci/tg:v0.2
 LABEL maintainer "Gruntwork <info@gruntwork.io>"
 
 COPY ["./src/main.sh", "/action/main.sh"]
