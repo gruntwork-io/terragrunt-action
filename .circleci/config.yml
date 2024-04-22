@@ -29,6 +29,13 @@ install_gruntwork_utils: &install_gruntwork_utils
       --terragrunt-version "NONE" \
       --packer-version "NONE" \
       --kubectl-version "NONE"
+run_precommit: &run_precommit
+  # Fail the build if the pre-commit hooks don't pass. Note: if you run $ pre-commit install locally within this repo, these hooks will
+  # execute automatically every time before you commit, ensuring the build never fails at this step!
+  name: run pre-commit hooks
+  command: |
+    pre-commit install
+    pre-commit run --all-files
 version: 2.1
 # ---------------------------------------------------------------------------------------------------------------------
 # REUSABLE STEPS
@@ -48,6 +55,15 @@ commands:
 # BUILD JOBS
 #----------------------------------------------------------------------------------------------------------------------
 jobs:
+  precommit:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - checkout
+      # Fail the build if the pre-commit hooks don't pass. Note: if you run pre-commit install locally, these hooks will
+      # execute automatically every time before you commit, ensuring the build never fails at this step!
+      - run:
+          <<: *run_precommit
   setup:
     <<: *env
     docker:
@@ -90,10 +106,19 @@ workflows:
   version: 2
   build-and-test:
     jobs:
+      - precommit:
+          context:
+            - AWS__PHXDEVOPS__circle-ci-test
+            - GITHUB__PAT__gruntwork-ci
+          filters:
+            tags:
+              only: /^v.*/
       - setup:
           context:
             - AWS__PHXDEVOPS__circle-ci-test
             - GITHUB__PAT__gruntwork-ci
+          requires:
+            - precommit
           filters:
             tags:
               only: /^v.*/
@@ -107,6 +132,7 @@ workflows:
             - SLACK__CHANNEL__test-workflow-approvals
           requires:
             - setup
+            - precommit
           filters:
             tags:
               only: /^v.*/
