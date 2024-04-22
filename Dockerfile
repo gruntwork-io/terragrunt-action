@@ -4,9 +4,9 @@ LABEL maintainer "Gruntwork <info@gruntwork.io>"
 
 ARG MISE_VERSION_INSTALL=v2024.4.0
 
-RUN mkdir -p "${HOME}/mise"
-RUN wget -q https://github.com/jdx/mise/releases/download/${MISE_VERSION_INSTALL}/mise-${MISE_VERSION_INSTALL}-linux-x64 -O /${HOME}/mise/mise
-RUN chmod u+x ${HOME}/mise/mise
+RUN mkdir -p "${HOME}/mise" \
+    && wget -q "https://github.com/jdx/mise/releases/download/${MISE_VERSION_INSTALL}/mise-${MISE_VERSION_INSTALL}-linux-x64" -O "/${HOME}/mise/mise" \
+    && chmod u+x "${HOME}/mise/mise"
 
 ENV MISE_CONFIG_DIR=~/.config/mise
 ENV MISE_STATE_DIR=~/.local/state/mise
