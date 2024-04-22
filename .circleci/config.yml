@@ -67,8 +67,6 @@ jobs:
           at: /home/circleci
       - run:
           <<: *install_gruntwork_utils
-      - run:
-          <<: *install_gh_cli
       - run: 
           name: Run tests
           command: |
