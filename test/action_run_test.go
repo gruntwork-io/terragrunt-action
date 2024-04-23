@@ -1,77 +1,109 @@
 package test
 
 import (
-	"github.com/gruntwork-io/terratest/modules/files"
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/gruntwork-io/terratest/modules/files"
+	"github.com/stretchr/testify/require"
 
 	"github.com/gruntwork-io/terratest/modules/docker"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestActionIsExecuted(t *testing.T) {
+func TestTerragruntAction(t *testing.T) {
 	t.Parallel()
 	tag := buildActionImage(t)
-	fixturePath := prepareFixture(t, "fixture-action-execution")
 
-	output := runAction(t, tag, fixturePath, "plan")
-	assert.Contains(t, output, "You can apply this plan to save these new output values to the Terraform")
+	testCases := []struct {
+		iac_name    string
+		iac_type    string
+		iac_version string
+		tg_version  string
+	}{
+		{"Terraform", "TF", "1.4.6", "0.46.3"},
+		{"OpenTofu", "TOFU", "1.6.0", "0.53.3"},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.iac_name, func(t *testing.T) {
+			t.Parallel()
+			t.Run("testActionIsExecuted", func(t *testing.T) {
+				t.Parallel()
+				testActionIsExecuted(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+			})
+			t.Run("testOutputPlanIsUsedInApply", func(t *testing.T) {
+				t.Parallel()
+				testOutputPlanIsUsedInApply(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+			})
+			t.Run("testRunAllIsExecute", func(t *testing.T) {
+				t.Parallel()
+				testRunAllIsExecuted(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+			})
+			t.Run("testAutoApproveDelete", func(t *testing.T) {
+				t.Parallel()
+				testAutoApproveDelete(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+			})
+		})
+	}
 }
 
-func TestOutputPlanIsUsedInApply(t *testing.T) {
-	t.Parallel()
-	tag := buildActionImage(t)
+func testActionIsExecuted(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
+	fixturePath := prepareFixture(t, "fixture-action-execution")
+
+	outputTF := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "plan")
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+iac_name)
+}
+
+func testOutputPlanIsUsedInApply(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
-	output := runAction(t, tag, fixturePath, "run-all plan -out=plan.out")
+	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -out=plan.out")
 	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
 
-	output = runAction(t, tag, fixturePath, "run-all apply plan.out")
+	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply plan.out")
 	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
 }
 
-func TestRunAllIsExecuted(t *testing.T) {
-	t.Parallel()
-	tag := buildActionImage(t)
+func testRunAllIsExecuted(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
-	output := runAction(t, tag, fixturePath, "run-all plan")
+	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan")
 	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
 
-	output = runAction(t, tag, fixturePath, "run-all apply")
+	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply")
 	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
 
-	output = runAction(t, tag, fixturePath, "run-all destroy")
+	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all destroy")
 	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy")
 	assert.Contains(t, output, "Destroy complete! Resources: 1 destroyed")
 }
 
-func TestAutoApproveDelete(t *testing.T) {
-	t.Parallel()
-	tag := buildActionImage(t)
+func testAutoApproveDelete(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
-	output := runAction(t, tag, fixturePath, "run-all plan -out=plan.out")
+	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -out=plan.out")
 	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
 
-	output = runAction(t, tag, fixturePath, "run-all apply plan.out")
+	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply plan.out")
 	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
 
 	// run destroy with auto-approve
-	output = runAction(t, tag, fixturePath, "run-all plan -destroy -out=destroy.out")
+	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -destroy -out=destroy.out")
 	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy")
 
-	output = runAction(t, tag, fixturePath, "run-all apply -destroy destroy.out")
+	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply -destroy destroy.out")
 	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed")
 }
 
-func runAction(t *testing.T, tag, fixturePath, command string) string {
+func runAction(t *testing.T, tag, fixturePath, iac_type string, iac_version string, tg_version string, command string) string {
 	opts := &docker.RunOptions{
 		EnvironmentVariables: []string{
-			"INPUT_TF_VERSION=1.4.6",
-			"INPUT_TG_VERSION=0.46.3",
+			"INPUT_" + iac_type + "_VERSION=" + iac_version,
+			"INPUT_TG_VERSION=" + tg_version,
 			"INPUT_TG_COMMAND=" + command,
 			"INPUT_TG_DIR=/github/workspace/code",
 			"GITHUB_OUTPUT=/tmp/logs",

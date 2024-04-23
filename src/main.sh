@@ -27,13 +27,24 @@ function clean_multiline_text {
 }
 
 # install and switch particular terraform version
+function install_tofu {
+  local -r version="$1"
+  if [[ "${version}" == "none" ]]; then
+    return
+  fi
+  log "Installing OpenTofu version ${version}"
+  mise install -y opentofu@"${version}"
+  mise use -g opentofu@"${version}"
+}
+
 function install_terraform {
   local -r version="$1"
   if [[ "${version}" == "none" ]]; then
     return
   fi
-  tfenv install "${version}"
-  tfenv use "${version}"
+  log "Installing Terraform version ${version}"
+  mise install terraform@"${version}"
+  mise use -g terraform@"${version}"
 }
 
 # install passed terragrunt version
@@ -42,7 +53,9 @@ function install_terragrunt {
   if [[ "${version}" == "none" ]]; then
     return
   fi
-  TG_VERSION="${version}" tgswitch
+  log "Installing Terragrunt version ${version}"
+  mise install -y terragrunt@"${version}"
+  mise use -g terragrunt@"${version}"
 }
 
 # run terragrunt commands in specified directory
@@ -139,13 +152,19 @@ function main {
   trap 'log "Finished Terragrunt Action execution"' EXIT
   local -r tf_version=${INPUT_TF_VERSION}
   local -r tg_version=${INPUT_TG_VERSION}
+  local -r tofu_version=${INPUT_TOFU_VERSION}
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-.}
 
-  if [[ -z "${tf_version}" ]]; then
-    log "tf_version is not set"
+  if [[ (-z "${tf_version}") && (-z "${tofu_version}")]]; then
+    log "One of tf_version or tofu_version must be set"
+    exit 1
+  fi
+
+  if [[ (-n "${tf_version}") && (-n "${tofu_version}")]]; then
+    log "Only one of tf_version and tofu_version may be set"
     exit 1
   fi
 
@@ -163,11 +182,26 @@ function main {
   trap 'setup_permissions $tg_dir ' EXIT
   setup_pre_exec
 
-  install_terraform "${tf_version}"
+  if [[ -n "${tf_version}" ]]; then
+    install_terraform "${tf_version}"
+  fi
+  if [[ -n "${tofu_version}" ]]; then
+    if [[ "${tg_version}" < 0.52.0 ]]; then
+      log "Terragrunt version ${tg_version} is incompatible with OpenTofu. Terragrunt version 0.52.0 or greater must be specified in order to use OpenTofu."
+      exit 1
+    fi
+    install_tofu "${tofu_version}"
+  fi
+
   install_terragrunt "${tg_version}"
 
   # add auto approve for apply and destroy commands
   local tg_arg_and_commands="${tg_command}"
+  if [[ -n "${tofu_version}" ]]; then
+    log "Using OpenTofu"
+    export TERRAGRUNT_TFPATH=tofu
+  fi
+
   if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* || "$tg_command" == "run-all apply"* || "$tg_command" == "run-all destroy"* ]]; then
     export TERRAGRUNT_NON_INTERACTIVE=true
     export TF_INPUT=false

@@ -1,9 +1,10 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/gruntwork-io/terratest/modules/docker"
 	"github.com/gruntwork-io/terratest/modules/random"
-	"testing"
 )
 
 func buildActionImage(t *testing.T) string {

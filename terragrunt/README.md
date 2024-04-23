@@ -1,17 +1,16 @@
 # Docker image to run terragrunt
 
-Docker image with TGEnv and TGSwitch installed inside, which can be used to install and run Terragrunt.
+Docker image with [`mise`](https://mise.jdx.dev/) installed inside, which can be used to install and run Terragrunt.
 
 Example usage:
 ```
-tfenv install "1.4.6"
-tfenv use "1.4.6"
-TG_VERSION="0.46.3" tgswitch
+mise use terraform@1.4.6
+mise use opentofu@1.6.2
+mise use terragrunt@0.46.3
 
 terragrunt ...
 ```
 
 ## References
 
-* https://github.com/tfutils/tfenv
-* https://github.com/warrensbox/tgswitch
+* https://mise.jdx.dev/

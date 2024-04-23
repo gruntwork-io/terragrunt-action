@@ -6,14 +6,15 @@ A GitHub Action for installing and running Terragrunt
 
 Supported GitHub action inputs:
 
-| Input Name     | Description                                                       | Required | Example values |
-|:---------------|:------------------------------------------------------------------|:--------:|:--------------:|
-| tf_version     | Terraform version to be used in Action execution                  |  `true`  |     1.4.6      | 
-| tg_version     | Terragrunt version to be user in Action execution                 |  `true`  |     0.50.8     |
-| tg_dir         | Directory in which Terragrunt will be invoked                     |  `true`  |      work      |
-| tg_command     | Terragrunt command to execute                                     |  `true`  |   plan/apply   |
-| tg_comment     | Add comment to Pull request with execution output                 | `false`  |      0/1       |
-| tg_add_approve | Automatically add "-auto-approve" to commands, enabled by default | `false`  |      0/1       |
+| Input Name     | Description                                                       | Required                                  | Example values |
+|:---------------|:------------------------------------------------------------------|:-----------------------------------------:|:--------------:|
+| tf_version     | Terraform version to be used in Action execution                  | `true` if `tofu_version` is not supplied |     1.4.6      | 
+| tofu_version   | OpenTofu version to be used in Action execution                   | `true` if `tf_version` is not supplied   |     1.6.0      |
+| tg_version     | Terragrunt version to be user in Action execution                 | `true`                                   |     0.50.8     |
+| tg_dir         | Directory in which Terragrunt will be invoked                     | `true`                                   |      work      |
+| tg_command     | Terragrunt command to execute                                     | `true`                                   |   plan/apply   |
+| tg_comment     | Add comment to Pull request with execution output                 | `false`                                  |      0/1       |
+| tg_add_approve | Automatically add "-auto-approve" to commands, enabled by default | `false`                                  |      0/1       |
 
 ## Environment Variables
 
