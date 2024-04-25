@@ -163,6 +163,8 @@ function main {
   ls -la /github/workspace
   ls -la /home
   ls -la /home/runner
+  echo $HOME
+  ls -la $HOME
 
   if [[ (-z "${tf_version}") && (-z "${tofu_version}")]]; then
     log "One of tf_version or tofu_version must be set"
@@ -202,6 +204,8 @@ function main {
   install_terragrunt "${tg_version}"
 
   ls -la /github/workspace
+  echo $HOME
+  ls -la $HOME
 
   # add auto approve for apply and destroy commands
   local tg_arg_and_commands="${tg_command}"
