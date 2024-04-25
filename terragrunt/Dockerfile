@@ -27,7 +27,7 @@ COPY ./known_hosts /home/runner/.ssh/known_hosts
 
 # install mise
 RUN wget -q "https://github.com/jdx/mise/releases/download/${MISE_VERSION_INSTALL}/mise-${MISE_VERSION_INSTALL}-linux-x64" -O "/usr/bin/mise" \
-    && chmod u+x "/usr/bin/mise"
+    && chmod +x "/usr/bin/mise"
 
 # Running action as runner user
 # https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions#user

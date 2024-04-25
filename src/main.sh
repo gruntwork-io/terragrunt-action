@@ -160,7 +160,7 @@ function main {
 
   whoami
   pwd
-  ls -la /usr/bin/
+  ls -la /github/workspace
   ls -la /home
   ls -la /home/runner
 
