@@ -206,6 +206,9 @@ function main {
   ls -la /github/workspace
   echo $HOME
   ls -la $HOME
+  which mise
+  which terragrunt
+  which tofu
 
   # add auto approve for apply and destroy commands
   local tg_arg_and_commands="${tg_command}"
