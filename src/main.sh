@@ -158,14 +158,6 @@ function main {
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-.}
 
-  whoami
-  pwd
-  ls -la /github/workspace
-  ls -la /home
-  ls -la /home/runner
-  echo $HOME
-  ls -la $HOME
-
   if [[ (-z "${tf_version}") && (-z "${tofu_version}")]]; then
     log "One of tf_version or tofu_version must be set"
     exit 1
@@ -202,13 +194,6 @@ function main {
   fi
 
   install_terragrunt "${tg_version}"
-
-  ls -la /github/workspace
-  echo $HOME
-  ls -la $HOME
-  which mise
-  which terragrunt
-  which tofu
 
   # add auto approve for apply and destroy commands
   local tg_arg_and_commands="${tg_command}"
