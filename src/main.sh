@@ -228,6 +228,8 @@ function main {
   # setup permissions for the output files
   setup_post_exec
 
+  ls -la /github/workspace
+
   local -r log_file="${terragrunt_log_file}"
   trap 'rm -rf ${log_file}' EXIT
 
