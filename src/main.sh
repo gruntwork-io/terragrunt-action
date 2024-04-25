@@ -228,8 +228,6 @@ function main {
   # setup permissions for the output files
   setup_post_exec
 
-  ls -la /github/workspace
-
   local -r log_file="${terragrunt_log_file}"
   trap 'rm -rf ${log_file}' EXIT
 
@@ -259,7 +257,7 @@ ${terragrunt_output}
   local tg_action_output
   tg_action_output=$(clean_multiline_text "${terragrunt_output}")
   echo "tg_action_output=${tg_action_output}" >> "${GITHUB_OUTPUT}"
-
+  ls -la /github/workspace
   exit $exit_code
 }
 
