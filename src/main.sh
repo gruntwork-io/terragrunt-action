@@ -158,6 +158,12 @@ function main {
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-.}
 
+  whoami
+  pwd
+  ls -la /usr/bin/
+  ls -la /home
+  ls -la /home/runner
+
   if [[ (-z "${tf_version}") && (-z "${tofu_version}")]]; then
     log "One of tf_version or tofu_version must be set"
     exit 1
