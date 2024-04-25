@@ -201,6 +201,8 @@ function main {
 
   install_terragrunt "${tg_version}"
 
+  ls -la /github/workspace
+
   # add auto approve for apply and destroy commands
   local tg_arg_and_commands="${tg_command}"
   if [[ -n "${tofu_version}" ]]; then
@@ -257,7 +259,7 @@ ${terragrunt_output}
   local tg_action_output
   tg_action_output=$(clean_multiline_text "${terragrunt_output}")
   echo "tg_action_output=${tg_action_output}" >> "${GITHUB_OUTPUT}"
-  ls -la /github/workspace
+
   exit $exit_code
 }
 
