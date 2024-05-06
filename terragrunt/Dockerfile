@@ -16,9 +16,9 @@ RUN apt-get update \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /home/runner/.ssh
-COPY ./known_hosts /home/runner/.ssh/known_hosts
-
+RUN mkdir -p /root/.ssh
+COPY ./known_hosts /root/.ssh/known_hosts
+RUN chown -R root:root /root/.ssh
 # install mise
 RUN wget -q "https://github.com/jdx/mise/releases/download/${MISE_VERSION_INSTALL}/mise-${MISE_VERSION_INSTALL}-linux-x64" -O "/usr/bin/mise" \
     && chmod +x "/usr/bin/mise"

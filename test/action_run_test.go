@@ -17,10 +17,10 @@ func TestTerragruntAction(t *testing.T) {
 	tag := buildActionImage(t)
 
 	testCases := []struct {
-		iac_name    string
-		iac_type    string
-		iac_version string
-		tg_version  string
+		iacName    string
+		iacType    string
+		iacVersion string
+		tgVersion  string
 	}{
 		{"Terraform", "TF", "1.4.6", "0.46.3"},
 		{"OpenTofu", "TOFU", "1.6.0", "0.53.3"},
@@ -29,86 +29,100 @@ func TestTerragruntAction(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 
-		t.Run(tc.iac_name, func(t *testing.T) {
+		t.Run(tc.iacName, func(t *testing.T) {
 			t.Parallel()
 			t.Run("testActionIsExecuted", func(t *testing.T) {
 				t.Parallel()
-				testActionIsExecuted(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+				testActionIsExecuted(t, tc.iacType, tc.iacName, tc.iacVersion, tc.tgVersion, tag)
+			})
+			t.Run("testActionIsExecutedSSHProject", func(t *testing.T) {
+				t.Parallel()
+				testActionIsExecutedSSHProject(t, tc.iacType, tc.iacName, tc.iacVersion, tc.tgVersion, tag)
 			})
 			t.Run("testOutputPlanIsUsedInApply", func(t *testing.T) {
 				t.Parallel()
-				testOutputPlanIsUsedInApply(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+				testOutputPlanIsUsedInApply(t, tc.iacType, tc.iacName, tc.iacVersion, tc.tgVersion, tag)
 			})
 			t.Run("testRunAllIsExecute", func(t *testing.T) {
 				t.Parallel()
-				testRunAllIsExecuted(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+				testRunAllIsExecuted(t, tc.iacType, tc.iacName, tc.iacVersion, tc.tgVersion, tag)
 			})
 			t.Run("testAutoApproveDelete", func(t *testing.T) {
 				t.Parallel()
-				testAutoApproveDelete(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+				testAutoApproveDelete(t, tc.iacType, tc.iacName, tc.iacVersion, tc.tgVersion, tag)
 			})
 		})
 	}
 }
 
-func testActionIsExecuted(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
+func testActionIsExecuted(t *testing.T, iacType string, iacName string, iacVersion string, tgVersion string, tag string) {
 	fixturePath := prepareFixture(t, "fixture-action-execution")
 
-	outputTF := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+iac_name)
+	outputTF := runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "plan")
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+iacName)
 }
 
-func testOutputPlanIsUsedInApply(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
-	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+func testActionIsExecutedSSHProject(t *testing.T, iacType string, iacName string, iacVersion string, tgVersion string, tag string) {
+	fixturePath := prepareFixture(t, "fixture-action-execution-ssh")
 
-	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -out=plan.out")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
-
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply plan.out")
-	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
+	outputTF := runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "plan")
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+iacName)
 }
 
-func testRunAllIsExecuted(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
+func testOutputPlanIsUsedInApply(t *testing.T, iacType string, iacName string, iacVersion string, tgVersion string, tag string) {
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
-	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
+	output := runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all plan -out=plan.out")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", iacName)
 
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
-
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all destroy")
-	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy")
-	assert.Contains(t, output, "Destroy complete! Resources: 1 destroyed")
+	output = runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all apply plan.out")
+	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", iacName)
 }
 
-func testAutoApproveDelete(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
+func testRunAllIsExecuted(t *testing.T, iacType string, iacName string, iacVersion string, tgVersion string, tag string) {
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
-	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -out=plan.out")
+	output := runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all plan")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", iacName)
+
+	output = runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all apply")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", iacName)
+
+	output = runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all destroy")
+	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy", iacName)
+	assert.Contains(t, output, "Destroy complete! Resources: 1 destroyed", iacName)
+}
+
+func testAutoApproveDelete(t *testing.T, iacType string, iacName string, iacVersion string, tgVersion string, tag string) {
+	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+
+	output := runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all plan -out=plan.out")
 	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
 
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply plan.out")
-	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
+	output = runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all apply plan.out")
+	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", iacName)
 
 	// run destroy with auto-approve
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -destroy -out=destroy.out")
-	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy")
+	output = runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all plan -destroy -out=destroy.out")
+	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy", iacName)
 
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply -destroy destroy.out")
-	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed")
+	output = runAction(t, tag, fixturePath, iacType, iacVersion, tgVersion, "run-all apply -destroy destroy.out")
+	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed", iacName)
 }
 
-func runAction(t *testing.T, tag, fixturePath, iac_type string, iac_version string, tg_version string, command string) string {
+func runAction(t *testing.T, tag, fixturePath, iacType string, iacVersion string, tgVersion string, command string) string {
 	opts := &docker.RunOptions{
 		EnvironmentVariables: []string{
-			"INPUT_" + iac_type + "_VERSION=" + iac_version,
-			"INPUT_TG_VERSION=" + tg_version,
+			"INPUT_" + iacType + "_VERSION=" + iacVersion,
+			"INPUT_tgVersion=" + tgVersion,
 			"INPUT_TG_COMMAND=" + command,
 			"INPUT_TG_DIR=/github/workspace/code",
 			"GITHUB_OUTPUT=/tmp/logs",
 		},
-		Volumes: []string{fixturePath + ":/github/workspace/code"},
+		Volumes: []string{
+			fixturePath + ":/github/workspace/code",
+		},
+		Remove: true,
 	}
 	return docker.Run(t, tag, opts)
 }

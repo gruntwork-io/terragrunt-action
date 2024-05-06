@@ -255,4 +255,11 @@ ${terragrunt_output}
   exit $exit_code
 }
 
+pwd
+whoami
+cat /root/.ssh/known_hosts
+mkdir -p /tmp/qwe
+
+git clone git@github.com:gruntwork-io/terragrunt.git /tmp/qwe
+
 main "$@"
