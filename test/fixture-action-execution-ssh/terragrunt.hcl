@@ -3,5 +3,5 @@ inputs = {
 }
 
 terraform {
-  source = "git::ssh://git@github.com:gruntwork-io/terragrunt.git//test/fixture-download/hello-world?ref=v0.9.9"
+  source = "git@github.com:gruntwork-io/terragrunt.git//test/fixture-download/hello-world?ref=v0.9.9"
 }

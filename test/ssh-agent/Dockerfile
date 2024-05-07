@@ -6,6 +6,6 @@ RUN apt-get update && \
 
 RUN mkdir /ssh-agent
 
-ENV SSH_AUTH_SOCK /ssh-agent/socket
-
-CMD ["ssh-agent", "-a", "/ssh-agent/socket"]
+ENV SSH_AUTH_SOCK /tmp/ssh-agent.sock
+ADD run.sh /run.sh
+CMD ["/run.sh"]

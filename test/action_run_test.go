@@ -1,9 +1,12 @@
 package test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/gruntwork-io/terratest/modules/random"
 
 	"github.com/gruntwork-io/terratest/modules/files"
 	"github.com/stretchr/testify/require"
@@ -114,26 +117,6 @@ func testAutoApproveDelete(t *testing.T, actionConfig ActionConfig, tag string) 
 }
 
 func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixturePath string, command string) string {
-	if sshAgent {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			assert.NoError(t, err)
-		}
-		sshPath := filepath.Join(homeDir, ".ssh")
-
-		sshAgentID := docker.RunAndGetID(t, "ssh-agent:local", &docker.RunOptions{
-			Remove: true,
-			EnvironmentVariables: []string{
-				"SSH_AUTH_SOCK=/tmp/ssh-agent.sock",
-			},
-			Volumes: []string{
-				"ssh-agent:/tmp",
-				// add home from .ssh folder to container
-				sshPath + ":/root/.ssh",
-			},
-		})
-		defer docker.Stop(t, []string{sshAgentID}, &docker.StopOptions{})
-	}
 
 	opts := &docker.RunOptions{
 		EnvironmentVariables: []string{
@@ -146,12 +129,31 @@ func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixt
 		Volumes: []string{
 			fixturePath + ":/github/workspace/code",
 		},
-		Remove: true,
 	}
+
 	if sshAgent {
-		// add ssh socket
-		opts.Volumes = append(opts.Volumes, "/tmp/ssh-agent.sock:/tmp/ssh-agent.sock")
-		opts.EnvironmentVariables = append(opts.EnvironmentVariables, "SSH_AUTH_SOCK=/tmp/ssh-agent.sock")
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			assert.NoError(t, err)
+		}
+		sshPath := filepath.Join(homeDir, ".ssh")
+
+		r := random.Random(1, 1000)
+		socketPath := fmt.Sprintf("/tmp/ssh-agent.sock.%d", r)
+		sshAgentID := docker.RunAndGetID(t, "ssh-agent:local", &docker.RunOptions{
+			Detach: true,
+			Remove: true,
+			EnvironmentVariables: []string{
+				"SSH_AUTH_SOCK=" + socketPath,
+			},
+			Volumes: []string{
+				"/tmp:/tmp",
+				sshPath + ":/root/keys",
+			},
+		})
+		defer docker.Stop(t, []string{sshAgentID}, &docker.StopOptions{})
+		opts.Volumes = append(opts.Volumes, "/tmp:/tmp")
+		opts.EnvironmentVariables = append(opts.EnvironmentVariables, "SSH_AUTH_SOCK="+socketPath)
 	}
 	return docker.Run(t, tag, opts)
 }
