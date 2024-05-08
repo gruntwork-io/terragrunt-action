@@ -106,8 +106,10 @@ function setup_permissions {
   # fetch the user id and group id under which the github action is running
   local -r uid=$(stat -c "%u" "/github/workspace")
   local -r gid=$(stat -c "%g" "/github/workspace")
-  sudo chown -R "$uid:$gid" "${dir}"
-  sudo chmod -R o+rw "${dir}"
+  if [[ -e "${dir}" ]]; then
+      sudo chown -R "$uid:$gid" "${dir}"
+      sudo chmod -R o+rw "${dir}"
+  fi
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
