@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Script to run ssh-agent in the background and add ssh keys
 set -x
 
 cleanup() {
@@ -23,3 +24,4 @@ ssh-add ~/.ssh/*
 
 echo "SSH agent running on: $SSH_AUTH_SOCK"
 tail -f /dev/null
+
