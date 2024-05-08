@@ -122,13 +122,14 @@ func testAutoApproveDelete(t *testing.T, actionConfig ActionConfig, tag string) 
 
 func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixturePath string, command string) string {
 
+	logId := random.Random(1, 5000)
 	opts := &docker.RunOptions{
 		EnvironmentVariables: []string{
 			"INPUT_" + actionConfig.iacType + "_VERSION=" + actionConfig.iacVersion,
 			"INPUT_TG_VERSION=" + actionConfig.tgVersion,
 			"INPUT_TG_COMMAND=" + command,
 			"INPUT_TG_DIR=/github/workspace",
-			"GITHUB_OUTPUT=/tmp/github-action-logs",
+			fmt.Sprintf("GITHUB_OUTPUT=/tmp/github-action-logs.%d", logId),
 		},
 		Volumes: []string{
 			fixturePath + ":/github/workspace",
@@ -143,8 +144,8 @@ func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixt
 		}
 		sshPath := filepath.Join(homeDir, ".ssh")
 
-		r := random.Random(1, 1000)
-		socketPath := fmt.Sprintf("/tmp/ssh-agent.sock.%d", r)
+		socketId := random.Random(1, 5000)
+		socketPath := fmt.Sprintf("/tmp/ssh-agent.sock.%d", socketId)
 		sshAgentID := docker.RunAndGetID(t, "ssh-agent:local", &docker.RunOptions{
 			Detach: true,
 			Remove: true,
