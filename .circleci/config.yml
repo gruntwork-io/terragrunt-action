@@ -67,7 +67,12 @@ jobs:
           at: /home/circleci
       - run:
           <<: *install_gruntwork_utils
-      - run: 
+      - run:
+          name: Setup test SSH key
+          command: |
+            echo -e $TEST_SSH_KEY > ~/.ssh/id_rsa_gh
+            chmod 600 ~/.ssh/id_rsa_gh
+      - run:
           name: Run tests
           command: |
             mkdir -p /tmp/logs
@@ -98,6 +103,7 @@ workflows:
             - SLACK__TOKEN__refarch-deployer-test
             - SLACK__WEBHOOK__refarch-deployer-test
             - SLACK__CHANNEL__test-workflow-approvals
+            - GITHUB_TERRAGRUNT_ACTION
           requires:
             - precommit
           filters:
