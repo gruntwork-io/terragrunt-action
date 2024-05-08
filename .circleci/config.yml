@@ -70,8 +70,9 @@ jobs:
       - run:
           name: Setup test SSH key
           command: |
-            echo -e $TEST_SSH_KEY > ~/.ssh/id_rsa_gh
-            chmod 600 ~/.ssh/id_rsa_gh
+            ls -lahrt ~/.ssh
+#            echo -e $TEST_SSH_KEY > ~/.ssh/id_rsa_gh
+#            chmod 600 ~/.ssh/id_rsa_gh
       - run:
           name: Run tests
           command: |
