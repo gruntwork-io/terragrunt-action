@@ -103,18 +103,11 @@ function setup_git {
 
 function setup_permissions {
   local -r dir="${1}"
-  sudo chown -R $(whoami) /github/workspace
-  # Set permissions for the working directory
-  if [[ -f "${dir}" ]]; then
-    sudo chown -R $(whoami) "${dir}"
-    sudo chmod -R o+rw "${dir}"
-  fi
-  # Set permissions for the output file
-  if [[ -f "${GITHUB_OUTPUT}" ]]; then
-    sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
-  fi
-  # set permissions for .terraform directories, if any
-  sudo find /github/workspace -name ".terraform*" -exec chmod -R 777 {} \;
+  # fetch the user id and group id under which the github action is running
+  local -r uid=$(stat -c "%u" "/github/workspace")
+  local -r gid=$(stat -c "%g" "/github/workspace")
+  sudo chown -R "$uid:$gid" "${dir}"
+  sudo chmod -R o+rw "${dir}"
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
@@ -219,6 +212,8 @@ function main {
   fi
   run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
   setup_permissions "${tg_dir}"
+  setup_permissions "${terragrunt_log_file}"
+  setup_permissions "${GITHUB_OUTPUT}"
   # setup permissions for the output files
   setup_post_exec
 

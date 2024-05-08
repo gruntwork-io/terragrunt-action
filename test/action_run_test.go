@@ -114,6 +114,10 @@ func testAutoApproveDelete(t *testing.T, actionConfig ActionConfig, tag string) 
 
 	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply -destroy destroy.out")
 	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed", actionConfig.iacName)
+
+	// check that fixturePath can removed recursively
+	err := os.RemoveAll(fixturePath)
+	assert.NoError(t, err)
 }
 
 func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixturePath string, command string) string {
@@ -123,15 +127,15 @@ func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixt
 			"INPUT_" + actionConfig.iacType + "_VERSION=" + actionConfig.iacVersion,
 			"INPUT_TG_VERSION=" + actionConfig.tgVersion,
 			"INPUT_TG_COMMAND=" + command,
-			"INPUT_TG_DIR=/github/workspace/code",
+			"INPUT_TG_DIR=/github/workspace",
 			"GITHUB_OUTPUT=/tmp/github-action-logs",
 		},
 		Volumes: []string{
-			fixturePath + ":/github/workspace/code",
+			fixturePath + ":/github/workspace",
 		},
 	}
 
-	// start ssh-agent container with SSH keys inside to allow action to clone Github code
+	// start ssh-agent container with SSH keys to allow clones over SSH
 	if sshAgent {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
@@ -161,18 +165,6 @@ func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixt
 
 func prepareFixture(t *testing.T, fixtureDir string) string {
 	path, err := files.CopyTerraformFolderToTemp(fixtureDir, "test")
-	require.NoError(t, err)
-	// chmod recursive for docker run
-
-	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		return os.Chmod(path, 0777)
-	})
-	require.NoError(t, err)
-
-	err = os.Chmod(path, 0777)
 	require.NoError(t, err)
 	return path
 }
