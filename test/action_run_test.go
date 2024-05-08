@@ -124,13 +124,14 @@ func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixt
 			"INPUT_TG_VERSION=" + actionConfig.tgVersion,
 			"INPUT_TG_COMMAND=" + command,
 			"INPUT_TG_DIR=/github/workspace/code",
-			"GITHUB_OUTPUT=/tmp/logs",
+			"GITHUB_OUTPUT=/tmp/github-action-logs",
 		},
 		Volumes: []string{
 			fixturePath + ":/github/workspace/code",
 		},
 	}
 
+	// start ssh-agent container with SSH keys inside to allow action to clone Github code
 	if sshAgent {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
