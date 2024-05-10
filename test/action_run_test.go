@@ -139,9 +139,7 @@ func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixt
 	// start ssh-agent container with SSH keys to allow clones over SSH
 	if sshAgent {
 		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			assert.NoError(t, err)
-		}
+		assert.NoError(t, err)
 		sshPath := filepath.Join(homeDir, ".ssh")
 
 		socketId := random.Random(1, 5000)
