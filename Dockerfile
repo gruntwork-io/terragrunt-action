@@ -1,6 +1,6 @@
 # Dockerfile used in execution of Github Action
 FROM gruntwork/terragrunt:0.2.0
-LABEL maintainer "Gruntwork <info@gruntwork.io>"
+LABEL maintainer="Gruntwork <info@gruntwork.io>"
 
 ENV MISE_CONFIG_DIR=~/.config/mise
 ENV MISE_STATE_DIR=~/.local/state/mise

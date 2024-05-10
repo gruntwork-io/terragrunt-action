@@ -7,11 +7,15 @@ import (
 	"github.com/gruntwork-io/terratest/modules/random"
 )
 
-func buildActionImage(t *testing.T) string {
-	tag := "terragrunt-action:" + random.UniqueId()
+func buildImage(t *testing.T, tag, path string) {
 	buildOptions := &docker.BuildOptions{
 		Tags: []string{tag},
 	}
-	docker.Build(t, "..", buildOptions)
+	docker.Build(t, path, buildOptions)
+}
+
+func buildActionImage(t *testing.T) string {
+	tag := "terragrunt-action:" + random.UniqueId()
+	buildImage(t, tag, "..")
 	return tag
 }

@@ -1,9 +1,12 @@
 package test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/gruntwork-io/terratest/modules/random"
 
 	"github.com/gruntwork-io/terratest/modules/files"
 	"github.com/stretchr/testify/require"
@@ -12,16 +15,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type ActionConfig struct {
+	iacName    string
+	iacType    string
+	iacVersion string
+	tgVersion  string
+}
+
 func TestTerragruntAction(t *testing.T) {
 	t.Parallel()
 	tag := buildActionImage(t)
+	buildImage(t, "ssh-agent:local", "ssh-agent")
 
-	testCases := []struct {
-		iac_name    string
-		iac_type    string
-		iac_version string
-		tg_version  string
-	}{
+	testCases := []ActionConfig{
 		{"Terraform", "TF", "1.4.6", "0.46.3"},
 		{"OpenTofu", "TOFU", "1.6.0", "0.53.3"},
 	}
@@ -29,104 +35,135 @@ func TestTerragruntAction(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 
-		t.Run(tc.iac_name, func(t *testing.T) {
+		t.Run(tc.iacName, func(t *testing.T) {
 			t.Parallel()
 			t.Run("testActionIsExecuted", func(t *testing.T) {
 				t.Parallel()
-				testActionIsExecuted(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+				testActionIsExecuted(t, tc, tag)
+			})
+			t.Run("testActionIsExecutedSSHProject", func(t *testing.T) {
+				t.Parallel()
+				testActionIsExecutedSSHProject(t, tc, tag)
 			})
 			t.Run("testOutputPlanIsUsedInApply", func(t *testing.T) {
 				t.Parallel()
-				testOutputPlanIsUsedInApply(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+				testOutputPlanIsUsedInApply(t, tc, tag)
 			})
 			t.Run("testRunAllIsExecute", func(t *testing.T) {
 				t.Parallel()
-				testRunAllIsExecuted(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+				testRunAllIsExecuted(t, tc, tag)
 			})
 			t.Run("testAutoApproveDelete", func(t *testing.T) {
 				t.Parallel()
-				testAutoApproveDelete(t, tc.iac_type, tc.iac_name, tc.iac_version, tc.tg_version, tag)
+				testAutoApproveDelete(t, tc, tag)
 			})
 		})
 	}
 }
 
-func testActionIsExecuted(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
+func testActionIsExecuted(t *testing.T, actionConfig ActionConfig, tag string) {
 	fixturePath := prepareFixture(t, "fixture-action-execution")
 
-	outputTF := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+iac_name)
+	outputTF := runAction(t, actionConfig, false, tag, fixturePath, "plan")
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+actionConfig.iacName)
 }
 
-func testOutputPlanIsUsedInApply(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
-	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+func testActionIsExecutedSSHProject(t *testing.T, actionConfig ActionConfig, tag string) {
+	fixturePath := prepareFixture(t, "fixture-action-execution-ssh")
 
-	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -out=plan.out")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
-
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply plan.out")
-	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
+	outputTF := runAction(t, actionConfig, true, tag, fixturePath, "plan")
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+actionConfig.iacName)
 }
 
-func testRunAllIsExecuted(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
+func testOutputPlanIsUsedInApply(t *testing.T, actionConfig ActionConfig, tag string) {
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
-	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
+	output := runAction(t, actionConfig, false, tag, fixturePath, "run-all plan -out=plan.out")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
 
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
-
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all destroy")
-	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy")
-	assert.Contains(t, output, "Destroy complete! Resources: 1 destroyed")
+	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply plan.out")
+	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", actionConfig.iacName)
 }
 
-func testAutoApproveDelete(t *testing.T, iac_type string, iac_name string, iac_version string, tg_version string, tag string) {
+func testRunAllIsExecuted(t *testing.T, actionConfig ActionConfig, tag string) {
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
-	output := runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -out=plan.out")
+	output := runAction(t, actionConfig, false, tag, fixturePath, "run-all plan")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
+
+	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
+
+	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all destroy")
+	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy", actionConfig.iacName)
+	assert.Contains(t, output, "Destroy complete! Resources: 1 destroyed", actionConfig.iacName)
+}
+
+func testAutoApproveDelete(t *testing.T, actionConfig ActionConfig, tag string) {
+	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+
+	output := runAction(t, actionConfig, false, tag, fixturePath, "run-all plan -out=plan.out")
 	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
 
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply plan.out")
-	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed")
+	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply plan.out")
+	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", actionConfig.iacName)
 
 	// run destroy with auto-approve
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all plan -destroy -out=destroy.out")
-	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy")
+	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all plan -destroy -out=destroy.out")
+	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy", actionConfig.iacName)
 
-	output = runAction(t, tag, fixturePath, iac_type, iac_version, tg_version, "run-all apply -destroy destroy.out")
-	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed")
+	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply -destroy destroy.out")
+	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed", actionConfig.iacName)
+
+	// check that fixturePath can removed recursively
+	err := os.RemoveAll(fixturePath)
+	assert.NoError(t, err)
 }
 
-func runAction(t *testing.T, tag, fixturePath, iac_type string, iac_version string, tg_version string, command string) string {
+func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixturePath string, command string) string {
+
+	logId := random.Random(1, 5000)
 	opts := &docker.RunOptions{
 		EnvironmentVariables: []string{
-			"INPUT_" + iac_type + "_VERSION=" + iac_version,
-			"INPUT_TG_VERSION=" + tg_version,
+			"INPUT_" + actionConfig.iacType + "_VERSION=" + actionConfig.iacVersion,
+			"INPUT_TG_VERSION=" + actionConfig.tgVersion,
 			"INPUT_TG_COMMAND=" + command,
-			"INPUT_TG_DIR=/github/workspace/code",
-			"GITHUB_OUTPUT=/tmp/logs",
+			"INPUT_TG_DIR=/github/workspace",
+			fmt.Sprintf("GITHUB_OUTPUT=/tmp/github-action-logs.%d", logId),
 		},
-		Volumes: []string{fixturePath + ":/github/workspace/code"},
+		Volumes: []string{
+			fixturePath + ":/github/workspace",
+		},
+	}
+
+	// start ssh-agent container with SSH keys to allow clones over SSH
+	if sshAgent {
+		homeDir, err := os.UserHomeDir()
+		assert.NoError(t, err)
+		sshPath := filepath.Join(homeDir, ".ssh")
+
+		socketId := random.Random(1, 5000)
+		socketPath := fmt.Sprintf("/tmp/ssh-agent.sock.%d", socketId)
+		sshAgentID := docker.RunAndGetID(t, "ssh-agent:local", &docker.RunOptions{
+			Detach: true,
+			Remove: true,
+			EnvironmentVariables: []string{
+				"SSH_AUTH_SOCK=" + socketPath,
+			},
+			Volumes: []string{
+				"/tmp:/tmp",
+				sshPath + ":/root/keys",
+			},
+		})
+		defer docker.Stop(t, []string{sshAgentID}, &docker.StopOptions{})
+		opts.Volumes = append(opts.Volumes, "/tmp:/tmp")
+		opts.EnvironmentVariables = append(opts.EnvironmentVariables, "SSH_AUTH_SOCK="+socketPath)
 	}
 	return docker.Run(t, tag, opts)
 }
 
 func prepareFixture(t *testing.T, fixtureDir string) string {
 	path, err := files.CopyTerraformFolderToTemp(fixtureDir, "test")
-	require.NoError(t, err)
-	// chmod recursive for docker run
-
-	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		return os.Chmod(path, 0777)
-	})
-	require.NoError(t, err)
-
-	err = os.Chmod(path, 0777)
 	require.NoError(t, err)
 	return path
 }
