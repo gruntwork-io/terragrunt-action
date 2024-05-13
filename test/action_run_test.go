@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/random"
@@ -73,14 +74,14 @@ func testActionIsExecuted(t *testing.T, actionConfig ActionConfig, tag string) {
 	fixturePath := prepareFixture(t, "fixture-action-execution")
 
 	outputTF := runAction(t, actionConfig, false, tag, fixturePath, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+actionConfig.iacName)
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchType(actionConfig))
 }
 
 func testActionIsExecutedSSHProject(t *testing.T, actionConfig ActionConfig, tag string) {
 	fixturePath := prepareFixture(t, "fixture-action-execution-ssh")
 
 	outputTF := runAction(t, actionConfig, true, tag, fixturePath, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+actionConfig.iacName)
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchType(actionConfig))
 }
 
 func testOutputPlanIsUsedInApply(t *testing.T, actionConfig ActionConfig, tag string) {
@@ -190,4 +191,13 @@ func prepareFixture(t *testing.T, fixtureDir string) string {
 	path, err := files.CopyTerraformFolderToTemp(fixtureDir, "test")
 	require.NoError(t, err)
 	return path
+}
+
+func fetchType(actionConfig ActionConfig) string {
+	// return Terraform if OpenTofu based on iacName value
+	if strings.Contains(strings.ToLower(actionConfig.iacName), "terraform") {
+		return "Terraform"
+	}
+	return "OpenTofu"
+
 }
