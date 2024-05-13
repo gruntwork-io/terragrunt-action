@@ -17,4 +17,5 @@ inputs = {
   num2  = 42
   file1 = dependency.module1.outputs.file
   file2 = dependency.module1.outputs.file
+  repo_root = get_path_to_repo_root()
 }

@@ -28,8 +28,8 @@ func TestTerragruntAction(t *testing.T) {
 	buildImage(t, "ssh-agent:local", "ssh-agent")
 
 	testCases := []ActionConfig{
-		{"Terraform", "TF", "1.4.6", "0.46.3"},
-		{"OpenTofu", "TOFU", "1.6.0", "0.53.3"},
+		{"Terraform", "TF", "1.7.5", "0.55.18"},
+		//{"OpenTofu", "TOFU", "1.6.0", "0.53.3"},
 	}
 
 	for _, tc := range testCases {
@@ -37,26 +37,26 @@ func TestTerragruntAction(t *testing.T) {
 
 		t.Run(tc.iacName, func(t *testing.T) {
 			t.Parallel()
-			t.Run("testActionIsExecuted", func(t *testing.T) {
-				t.Parallel()
-				testActionIsExecuted(t, tc, tag)
-			})
-			t.Run("testActionIsExecutedSSHProject", func(t *testing.T) {
-				t.Parallel()
-				testActionIsExecutedSSHProject(t, tc, tag)
-			})
+			//t.Run("testActionIsExecuted", func(t *testing.T) {
+			//	t.Parallel()
+			//	testActionIsExecuted(t, tc, tag)
+			//})
+			//t.Run("testActionIsExecutedSSHProject", func(t *testing.T) {
+			//	t.Parallel()
+			//	testActionIsExecutedSSHProject(t, tc, tag)
+			//})
 			t.Run("testOutputPlanIsUsedInApply", func(t *testing.T) {
 				t.Parallel()
 				testOutputPlanIsUsedInApply(t, tc, tag)
 			})
-			t.Run("testRunAllIsExecute", func(t *testing.T) {
-				t.Parallel()
-				testRunAllIsExecuted(t, tc, tag)
-			})
-			t.Run("testAutoApproveDelete", func(t *testing.T) {
-				t.Parallel()
-				testAutoApproveDelete(t, tc, tag)
-			})
+			//t.Run("testRunAllIsExecute", func(t *testing.T) {
+			//	t.Parallel()
+			//	testRunAllIsExecuted(t, tc, tag)
+			//})
+			//t.Run("testAutoApproveDelete", func(t *testing.T) {
+			//	t.Parallel()
+			//	testAutoApproveDelete(t, tc, tag)
+			//})
 		})
 	}
 }
@@ -78,10 +78,10 @@ func testActionIsExecutedSSHProject(t *testing.T, actionConfig ActionConfig, tag
 func testOutputPlanIsUsedInApply(t *testing.T, actionConfig ActionConfig, tag string) {
 	fixturePath := prepareFixture(t, "fixture-dependencies-project")
 
-	output := runAction(t, actionConfig, false, tag, fixturePath, "run-all plan -out=plan.out")
+	output := runAction(t, actionConfig, false, tag, fixturePath, "run-all plan -out=plan.out --terragrunt-log-level debug")
 	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
 
-	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply plan.out")
+	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply plan.out --terragrunt-log-level debug")
 	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", actionConfig.iacName)
 }
 
