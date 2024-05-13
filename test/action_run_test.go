@@ -74,14 +74,14 @@ func testActionIsExecuted(t *testing.T, actionConfig ActionConfig, tag string) {
 	fixturePath := prepareFixture(t, "fixture-action-execution")
 
 	outputTF := runAction(t, actionConfig, false, tag, fixturePath, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchType(actionConfig))
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchIacType(actionConfig))
 }
 
 func testActionIsExecutedSSHProject(t *testing.T, actionConfig ActionConfig, tag string) {
 	fixturePath := prepareFixture(t, "fixture-action-execution-ssh")
 
 	outputTF := runAction(t, actionConfig, true, tag, fixturePath, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchType(actionConfig))
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchIacType(actionConfig))
 }
 
 func testOutputPlanIsUsedInApply(t *testing.T, actionConfig ActionConfig, tag string) {
@@ -103,7 +103,7 @@ func testGitWorkingAction(t *testing.T, actionConfig ActionConfig, tag string) {
 	}
 
 	output := runAction(t, actionConfig, true, tag, fixturePath, "run-all plan -out=plan.out --terragrunt-log-level debug")
-	assert.Contains(t, output, "Terraform has been successfully initialized!", actionConfig.iacName)
+	assert.Contains(t, output, fetchIacType(actionConfig)+" has been successfully initialized!", actionConfig.iacName)
 	assert.Contains(t, output, "execute_INPUT_POST_EXEC_1", actionConfig.iacName)
 	assert.Contains(t, output, "execute_INPUT_PRE_EXEC_1", actionConfig.iacName)
 }
@@ -193,9 +193,9 @@ func prepareFixture(t *testing.T, fixtureDir string) string {
 	return path
 }
 
-func fetchType(actionConfig ActionConfig) string {
+func fetchIacType(actionConfig ActionConfig) string {
 	// return Terraform if OpenTofu based on iacName value
-	if strings.Contains(strings.ToLower(actionConfig.iacName), "terraform") {
+	if strings.ToLower(actionConfig.iacType) == "tf" {
 		return "Terraform"
 	}
 	return "OpenTofu"
