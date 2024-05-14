@@ -96,16 +96,16 @@ function comment {
 
 function setup_git {
   # Avoid git permissions warnings
-  sudo git config --global --add safe.directory /github/workspace
+  git config --global --add safe.directory /github/workspace
   # Also trust any subfolder within workspace
-  sudo git config --global --add safe.directory "*"
+  git config --global --add safe.directory "*"
 }
 
 function setup_permissions {
   local -r dir="${1}"
-  # fetch the user id and group id under which the github action is running
-  local -r uid=$(stat -c "%u" "/github/workspace")
-  local -r gid=$(stat -c "%g" "/github/workspace")
+  local -r uid="${2}"
+  local -r gid="${3}"
+
   if [[ -e "${dir}" ]]; then
       sudo chown -R "$uid:$gid" "${dir}"
       sudo chmod -R o+rw "${dir}"
@@ -173,8 +173,13 @@ function main {
     exit 1
   fi
   setup_git
-  setup_permissions "${tg_dir}"
-  trap 'setup_permissions $tg_dir ' EXIT
+  # fetch the user id and group id under which the github action is running
+  local -r uid=$(stat -c "%u" "/github/workspace")
+  local -r gid=$(stat -c "%g" "/github/workspace")
+  local -r action_user=$(whoami)
+
+  setup_permissions "${tg_dir}" "${action_user}" "${action_user}"
+  trap 'setup_permissions $tg_dir $uid $guid' EXIT
   setup_pre_exec
 
   if [[ -n "${tf_version}" ]]; then
