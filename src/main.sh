@@ -90,7 +90,7 @@ function comment {
     return
   fi
   local escaped_message
-  escaped_message=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  escaped_message=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/g' | tr -d '\n')
   local tmpfile
   tmpfile=$(mktemp)
   echo "{\"body\": \"$escaped_message\"}" > "$tmpfile"
