@@ -89,9 +89,11 @@ function comment {
     log "Skipping comment as there is not comment url"
     return
   fi
-  local messagePayload
-  messagePayload=$(jq -n --arg body "$message" '{ "body": $body }')
-  curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$messagePayload" "$comment_url"
+  local -r escaped_message=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/g' | tr -d '\n')
+  local -r tmpfile=$(mktemp)
+  echo "{\"body\": \"$escaped_message\"}" > "$tmpfile"
+  curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d @"$tmpfile" "$comment_url"
+  rm "$tmpfile"
 }
 
 function setup_git {
