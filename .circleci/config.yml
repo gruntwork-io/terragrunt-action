@@ -1,72 +1,96 @@
 env: &env
   environment:
-    GRUNTWORK_INSTALLER_VERSION: v0.0.36
-    MODULE_CI_VERSION: v0.46.0
-    GO_VERSION: 1.21.1
     GO111MODULE: auto
-
+    GRUNTWORK_INSTALLER_VERSION: v0.0.36
+    MODULE_CI_VERSION: v0.54.0
+    TERRATEST_LOG_PARSER_VERSION: v0.37.0
+    GOLANG_VERSION: 1.21.1
 defaults: &defaults
   machine:
     enabled: true
     image: ubuntu-2004:2022.10.1
   <<: *env
-
+run_precommit: &run_precommit
+  # Fail the build if the pre-commit hooks don't pass. Note: if you run $ pre-commit install locally within this repo, these hooks will
+  # execute automatically every time before you commit, ensuring the build never fails at this step!
+  name: run pre-commit hooks
+  command: |
+    pre-commit install
+    pre-commit run --all-files
 install_gruntwork_utils: &install_gruntwork_utils
   name: install gruntwork utils
   command: |
     curl -Ls https://raw.githubusercontent.com/gruntwork-io/gruntwork-installer/master/bootstrap-gruntwork-installer.sh | bash /dev/stdin --version "${GRUNTWORK_INSTALLER_VERSION}"
     gruntwork-install --module-name "gruntwork-module-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
-    gruntwork-install --module-name "kubernetes-circleci-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
-
-    echo "Installing Go version $GO_VERSION"
-    curl -O --silent --location --fail --show-error "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz"
-    sudo rm -rf /usr/local/go
-    sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
-    sudo ln -s /usr/local/go/bin/go /usr/bin/go
-    echo "The installed version of Go is now $(go version)"
-
-version: 2
+    gruntwork-install --module-name "git-helpers" --repo "https://github.com/gruntwork-io/terraform-aws-ci" --tag "${MODULE_CI_VERSION}"
+    gruntwork-install --binary-name "terratest_log_parser" --repo "https://github.com/gruntwork-io/terratest" --tag "${TERRATEST_LOG_PARSER_VERSION}"
+    configure-environment-for-gruntwork-module \
+      --mise-version "NONE" \
+      --terraform-version "NONE" \
+      --terragrunt-version "NONE" \
+      --packer-version "NONE" \
+      --go-version ${GOLANG_VERSION}
+version: 2.1
+# ---------------------------------------------------------------------------------------------------------------------
+# REUSABLE STEPS
+# ---------------------------------------------------------------------------------------------------------------------
+commands:
+  store_results:
+    description: Store test results for easy viewing.
+    steps:
+      - run:
+          command: terratest_log_parser --testlog /tmp/logs/all.log --outputdir /tmp/logs
+          when: always
+      - store_artifacts:
+          path: /tmp/logs
+      - store_test_results:
+          path: /tmp/logs
+#----------------------------------------------------------------------------------------------------------------------
+# BUILD JOBS
+#----------------------------------------------------------------------------------------------------------------------
 jobs:
-  setup:
+  precommit:
     <<: *env
     docker:
-      - image: cimg/python:3.10.2
-
+      - image: 087285199408.dkr.ecr.us-east-1.amazonaws.com/circle-ci-test-image-base:go1.21.9-tf1.5-tg39.1-pck1.8-ci54.0
     steps:
       - checkout
-
-      # Install gruntwork utilities
+      # Fail the build if the pre-commit hooks don't pass. Note: if you run pre-commit install locally, these hooks will
+      # execute automatically every time before you commit, ensuring the build never fails at this step!
       - run:
-          <<: *install_gruntwork_utils
-
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - project
-
+          <<: *run_precommit
   tests:
     <<: *defaults
     steps:
+      - checkout
       - attach_workspace:
           at: /home/circleci
-
       - run:
           <<: *install_gruntwork_utils
-      - run: |
-          run-go-tests --path test --timeout 60m  --packages . | (tee /tmp/logs/all.log || true)
-
+      - run: 
+          name: Run tests
+          command: |
+            mkdir -p /tmp/logs
+            run-go-tests \
+              --path test \
+              --timeout 60m \
+              --packages . \
+              | (tee /tmp/logs/all.log || true)
+      - store_results
+#----------------------------------------------------------------------------------------------------------------------
+# WORKFLOWS
+#----------------------------------------------------------------------------------------------------------------------
 workflows:
   version: 2
   build-and-test:
     jobs:
-      - setup:
+      - precommit:
           context:
             - AWS__PHXDEVOPS__circle-ci-test
             - GITHUB__PAT__gruntwork-ci
           filters:
             tags:
               only: /^v.*/
-
       - tests:
           context:
             - AWS__PHXDEVOPS__circle-ci-test
@@ -75,8 +99,7 @@ workflows:
             - SLACK__WEBHOOK__refarch-deployer-test
             - SLACK__CHANNEL__test-workflow-approvals
           requires:
-            - setup
+            - precommit
           filters:
             tags:
               only: /^v.*/
-

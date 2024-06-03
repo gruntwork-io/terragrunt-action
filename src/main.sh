@@ -27,13 +27,24 @@ function clean_multiline_text {
 }
 
 # install and switch particular terraform version
+function install_tofu {
+  local -r version="$1"
+  if [[ "${version}" == "none" ]]; then
+    return
+  fi
+  log "Installing OpenTofu version ${version}"
+  mise install -y opentofu@"${version}"
+  mise use -g opentofu@"${version}"
+}
+
 function install_terraform {
   local -r version="$1"
   if [[ "${version}" == "none" ]]; then
     return
   fi
-  tfenv install "${version}"
-  tfenv use "${version}"
+  log "Installing Terraform version ${version}"
+  mise install terraform@"${version}"
+  mise use -g terraform@"${version}"
 }
 
 # install passed terragrunt version
@@ -42,7 +53,9 @@ function install_terragrunt {
   if [[ "${version}" == "none" ]]; then
     return
   fi
-  TG_VERSION="${version}" tgswitch
+  log "Installing Terragrunt version ${version}"
+  mise install -y terragrunt@"${version}"
+  mise use -g terragrunt@"${version}"
 }
 
 # run terragrunt commands in specified directory
@@ -76,32 +89,29 @@ function comment {
     log "Skipping comment as there is not comment url"
     return
   fi
-  local messagePayload
-  messagePayload=$(jq -n --arg body "$message" '{ "body": $body }')
-  curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$messagePayload" "$comment_url"
+  local -r escaped_message=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/g' | tr -d '\n')
+  local -r tmpfile=$(mktemp)
+  echo "{\"body\": \"$escaped_message\"}" > "$tmpfile"
+  curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d @"$tmpfile" "$comment_url"
+  rm "$tmpfile"
 }
 
 function setup_git {
   # Avoid git permissions warnings
-  sudo git config --global --add safe.directory /github/workspace
+  git config --global --add safe.directory /github/workspace
   # Also trust any subfolder within workspace
-  sudo git config --global --add safe.directory "*"
+  git config --global --add safe.directory "*"
 }
 
 function setup_permissions {
   local -r dir="${1}"
-  sudo chown -R $(whoami) /github/workspace
-  # Set permissions for the working directory
-  if [[ -f "${dir}" ]]; then
-    sudo chown -R $(whoami) "${dir}"
-    sudo chmod -R o+rw "${dir}"
+  local -r uid="${2}"
+  local -r gid="${3}"
+
+  if [[ -e "${dir}" ]]; then
+      sudo chown -R "$uid:$gid" "${dir}"
+      sudo chmod -R o+rw "${dir}"
   fi
-  # Set permissions for the output file
-  if [[ -f "${GITHUB_OUTPUT}" ]]; then
-    sudo chown -R $(whoami) "${GITHUB_OUTPUT}"
-  fi
-  # set permissions for .terraform directories, if any
-  sudo find /github/workspace -name ".terraform*" -exec chmod -R 777 {} \;
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
@@ -149,6 +159,7 @@ function main {
   trap 'log "Finished Terragrunt Action execution"' EXIT
   local -r tf_version=${INPUT_TF_VERSION}
   local -r tg_version=${INPUT_TG_VERSION}
+  local -r tofu_version=${INPUT_TOFU_VERSION}
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
@@ -156,8 +167,13 @@ function main {
   local -r tg_install_python_3=${INPUT_TG_INSTALL_PYTHON_3}
   local -r tg_python_version=${INPUT_TG_PYTHON_VERSION}
   
-  if [[ -z "${tf_version}" ]]; then
-    log "tf_version is not set"
+  if [[ (-z "${tf_version}") && (-z "${tofu_version}")]]; then
+    log "One of tf_version or tofu_version must be set"
+    exit 1
+  fi
+
+  if [[ (-n "${tf_version}") && (-n "${tofu_version}")]]; then
+    log "Only one of tf_version and tofu_version may be set"
     exit 1
   fi
 
@@ -180,15 +196,35 @@ function main {
   fi
 
   setup_git
-  setup_permissions "${tg_dir}"
-  trap 'setup_permissions $tg_dir ' EXIT
+  # fetch the user id and group id under which the github action is running
+  local -r uid=$(stat -c "%u" "/github/workspace")
+  local -r gid=$(stat -c "%g" "/github/workspace")
+  local -r action_user=$(whoami)
+
+  setup_permissions "${tg_dir}" "${action_user}" "${action_user}"
+  trap 'setup_permissions $tg_dir $uid $guid' EXIT
   setup_pre_exec
 
-  install_terraform "${tf_version}"
+  if [[ -n "${tf_version}" ]]; then
+    install_terraform "${tf_version}"
+  fi
+  if [[ -n "${tofu_version}" ]]; then
+    if [[ "${tg_version}" < 0.52.0 ]]; then
+      log "Terragrunt version ${tg_version} is incompatible with OpenTofu. Terragrunt version 0.52.0 or greater must be specified in order to use OpenTofu."
+      exit 1
+    fi
+    install_tofu "${tofu_version}"
+  fi
+
   install_terragrunt "${tg_version}"
 
   # add auto approve for apply and destroy commands
   local tg_arg_and_commands="${tg_command}"
+  if [[ -n "${tofu_version}" ]]; then
+    log "Using OpenTofu"
+    export TERRAGRUNT_TFPATH=tofu
+  fi
+
   if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* || "$tg_command" == "run-all apply"* || "$tg_command" == "run-all destroy"* ]]; then
     export TERRAGRUNT_NON_INTERACTIVE=true
     export TF_INPUT=false
@@ -206,6 +242,8 @@ function main {
   fi
   run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
   setup_permissions "${tg_dir}"
+  setup_permissions "${terragrunt_log_file}"
+  setup_permissions "${GITHUB_OUTPUT}"
   # setup permissions for the output files
   setup_post_exec
 
