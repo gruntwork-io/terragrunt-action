@@ -144,6 +144,16 @@ function setup_post_exec {
   done <<< "$post_exec_vars"
 }
 
+# Install python 3.10 or 3.11
+function install_python {
+  local -r version="$1"
+  sudo apt update
+  sudo apt install python"${version}" -y
+  sudo update-alternatives --install /usr/bin/python3 python /usr/bin/python"${version}" 1
+  sudo update-alternatives --set python /usr/bin/python"${version}"
+}
+
+
 function main {
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
@@ -154,7 +164,9 @@ function main {
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-.}
-
+  local -r tg_install_python_3=${INPUT_TG_INSTALL_PYTHON_3}
+  local -r tg_python_version=${INPUT_TG_PYTHON_VERSION}
+  
   if [[ (-z "${tf_version}") && (-z "${tofu_version}")]]; then
     log "One of tf_version or tofu_version must be set"
     exit 1
@@ -174,6 +186,15 @@ function main {
     log "tg_command is not set"
     exit 1
   fi
+
+  if [[ "${tg_install_python_3}" == "1" ]]; then
+    if ! [[ "${tg_python_version}" == "3.10" || "${tg_python_version}" == "3.11" ]]; then
+      log "ERROR: Only python3.10 and python3.11 are allowed. Check https://github.com/gruntwork-io/terragrunt-action?tab=readme-ov-file#inputs"
+      exit 1 
+    fi
+    install_python "${tg_python_version}"
+  fi
+
   setup_git
   # fetch the user id and group id under which the github action is running
   local -r uid=$(stat -c "%u" "/github/workspace")
