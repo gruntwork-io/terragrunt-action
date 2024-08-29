@@ -48,7 +48,7 @@ on:
 
 env:
   tofu_version: '1.8.1'
-  tg_version: '0.66.9'
+  tg_version: '0.67.0'
   working_dir: 'project'
 
 jobs:
