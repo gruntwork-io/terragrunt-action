@@ -28,6 +28,14 @@ inputs:
     description: 'Add -auto-approve to commands which require changes to be applied'
     default: '1'
     required: false
+  tg_install_python_3:
+    description: 'Wheteher or not to install Python 3'
+    default: '0'
+    required: false
+  tg_python_version:
+    description: 'What version of python3 to install'
+    default: '3.10'
+    required: false
 outputs:
   tg_action_output:
     description: 'Terragrunt execution output'
