@@ -7,13 +7,6 @@ branding:
   color: 'purple'
 
 inputs:
-  tg_version:
-    description: 'Terragrunt version to install.'
-    required: true
-  tf_version:
-    description: 'Terraform version to install.'
-  tofu_version:
-    description: 'OpenTofu version to install.'
   tg_command:
     description: 'Terragrunt command to execute.'
     required: true
