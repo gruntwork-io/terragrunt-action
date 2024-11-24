@@ -126,8 +126,8 @@ function main {
   local -r gid=$(stat -c "%g" "/github/workspace")
   local -r action_user=$(whoami)
 
-  setup_permissions "${tg_dir}" "${action_user}" "${action_user}"
-  trap 'setup_permissions $tg_dir $uid $guid' EXIT
+  # setup_permissions "${tg_dir}" "${action_user}" "${action_user}"
+  # trap 'setup_permissions $tg_dir $uid $guid' EXIT
   setup_pre_exec
 
   # add auto approve for apply and destroy commands
@@ -150,9 +150,9 @@ function main {
     fi
   fi
   run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
-  setup_permissions "${tg_dir}"
-  setup_permissions "${terragrunt_log_file}"
-  setup_permissions "${GITHUB_OUTPUT}"
+  # setup_permissions "${tg_dir}"
+  # setup_permissions "${terragrunt_log_file}"
+  # setup_permissions "${GITHUB_OUTPUT}"
   # setup permissions for the output files
   setup_post_exec
 
