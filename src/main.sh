@@ -71,17 +71,6 @@ function setup_git {
   git config --global --add safe.directory "*"
 }
 
-function setup_permissions {
-  local -r dir="${1}"
-  local -r uid="${2}"
-  local -r gid="${3}"
-
-  if [[ -e "${dir}" ]]; then
-      sudo chown -R "$uid:$gid" "${dir}"
-      sudo chmod -R o+rw "${dir}"
-  fi
-}
-
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
 function setup_pre_exec {
   # Get all environment variables that match the pattern INPUT_PRE_EXEC_*
@@ -150,10 +139,6 @@ function main {
     fi
   fi
   run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
-  # setup_permissions "${tg_dir}"
-  # setup_permissions "${terragrunt_log_file}"
-  # setup_permissions "${GITHUB_OUTPUT}"
-  # setup permissions for the output files
   setup_post_exec
 
   local -r log_file="${terragrunt_log_file}"
