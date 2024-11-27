@@ -26,6 +26,9 @@ outputs:
     description: 'Terragrunt execution output'
   tg_action_exit_code:
     description: 'Terragrunt exit code'
+
 runs:
-  using: 'docker'
-  image: './Dockerfile'
+  using: "composite"
+  steps:
+  - run: src/main.sh
+    shell: bash
