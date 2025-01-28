@@ -18,8 +18,8 @@ inputs:
     description: 'Terragrunt command to execute.'
     required: true
   tg_dir:
-    description: 'Directory in which Terragrunt will be executed.'
-    required: true
+    description: 'Directory in which Terragrunt will be executed. Default is the current working dir'
+    required: false
   tg_comment:
     description: 'Include execution output as comment'
     default: '0'
