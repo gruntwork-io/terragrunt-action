@@ -153,7 +153,7 @@ function main {
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
-  local -r tg_dir=${INPUT_TG_DIR:-.}
+  local -r tg_dir=${INPUT_TG_DIR:-${pwd}} # an absolute path
 
   if [[ (-z "${tf_version}") && (-z "${tofu_version}")]]; then
     log "One of tf_version or tofu_version must be set"
