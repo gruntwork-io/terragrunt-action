@@ -20,8 +20,7 @@ RUN mkdir -p /root/.ssh
 COPY ./known_hosts /root/.ssh/known_hosts
 RUN chown -R root:root /root/.ssh
 # install mise
-RUN wget -q "https://github.com/jdx/mise/releases/download/${MISE_VERSION_INSTALL}/mise-${MISE_VERSION_INSTALL}-linux-x64" -O "/usr/bin/mise" \
-    && chmod +x "/usr/bin/mise"
+RUN curl https://mise.run | MISE_VERSION=${MISE_VERSION_INSTALL} MISE_INSTALL_PATH=/usr/bin/mise sh
 
 ENV PATH="~/.local/share/mise/shims:${PATH}"
 
