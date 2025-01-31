@@ -14,3 +14,18 @@ terragrunt ...
 ## References
 
 * https://mise.jdx.dev/
+
+
+## Multiarch build notes
+
+```
+docker buildx create --name multiarch-builder
+docker buildx use multiarch-builder
+
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t gruntwork/terragrunt:0.2.0-test-arm \
+  --push \
+  .
+
+```
