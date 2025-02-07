@@ -8,13 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gruntwork-io/terratest/modules/random"
-
-	"github.com/gruntwork-io/terratest/modules/files"
-	"github.com/stretchr/testify/require"
-
 	"github.com/gruntwork-io/terratest/modules/docker"
+	"github.com/gruntwork-io/terratest/modules/files"
+	"github.com/gruntwork-io/terratest/modules/random"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type ActionConfig struct {
@@ -22,6 +20,7 @@ type ActionConfig struct {
 	iacType    string
 	iacVersion string
 	tgVersion  string
+	tgDir      string
 }
 
 func TestTerragruntAction(t *testing.T) {
@@ -30,11 +29,11 @@ func TestTerragruntAction(t *testing.T) {
 	buildImage(t, "ssh-agent:local", "ssh-agent")
 
 	testCases := []ActionConfig{
-		{"Terraform1.5", "TF", "1.5.7", "0.55.18"},
-		{"Terraform1.7", "TF", "1.7.5", "0.55.18"},
-		{"Terraform1.8", "TF", "1.8.3", "0.55.18"},
-		{"OpenTofu1.6", "TOFU", "1.6.0", "0.55.18"},
-		{"OpenTofu1.7", "TOFU", "1.7.0", "0.55.18"},
+		{"Terraform1.5", "TF", "1.5.7", "0.55.18", ""},
+		{"Terraform1.7", "TF", "1.7.5", "0.55.18", "/github/workspace"},
+		{"Terraform1.8", "TF", "1.8.3", "0.55.18", ""},
+		{"OpenTofu1.6", "TOFU", "1.6.0", "0.55.18", ""},
+		{"OpenTofu1.7", "TOFU", "1.7.0", "0.55.18", "/github/workspace"},
 	}
 
 	for _, tc := range testCases {
@@ -144,20 +143,24 @@ func testAutoApproveDelete(t *testing.T, actionConfig ActionConfig, tag string) 
 }
 
 func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixturePath string, command string) string {
-
 	logId := random.Random(1, 5000)
+	tgDir := actionConfig.tgDir
+	if tgDir == "" {
+		tgDir = "/github/workspace"
+	}
+
 	opts := &docker.RunOptions{
 		EnvironmentVariables: []string{
 			"INPUT_" + actionConfig.iacType + "_VERSION=" + actionConfig.iacVersion,
 			"INPUT_TG_VERSION=" + actionConfig.tgVersion,
 			"INPUT_TG_COMMAND=" + command,
-			"INPUT_TG_DIR=/github/workspace",
+			"INPUT_TG_DIR=" + tgDir,
 			"INPUT_PRE_EXEC_1=echo 'execute_INPUT_PRE_EXEC_1'",
 			"INPUT_POST_EXEC_1=echo 'execute_INPUT_POST_EXEC_1'",
 			fmt.Sprintf("GITHUB_OUTPUT=/tmp/github-action-logs.%d", logId),
 		},
 		Volumes: []string{
-			fixturePath + ":/github/workspace",
+			fixturePath + ":" + tgDir,
 		},
 	}
 
@@ -199,5 +202,4 @@ func fetchIacType(actionConfig ActionConfig) string {
 		return "Terraform"
 	}
 	return "OpenTofu"
-
 }
