@@ -41,6 +41,8 @@ func TestTerragruntAction(t *testing.T) {
 		{"Terraform1.8", "TF", "1.8.3", "0.55.18"},
 		{"OpenTofu1.6", "TOFU", "1.6.0", "0.55.18"},
 		{"OpenTofu1.7", "TOFU", "1.7.0", "0.55.18"},
+		{"OpenTofu1.8", "TOFU", "1.8.0", "0.72.9"},
+		{"OpenTofu1.9", "TOFU", "1.9.0", "0.72.9"},
 	}
 
 	for _, tc := range testCases {
@@ -61,18 +63,43 @@ func TestTerragruntAction(t *testing.T) {
 	}
 }
 
+func TestTerragruntActionEmptyPath(t *testing.T) {
+	t.Parallel()
+	tag := buildActionImage(t)
+
+	fixturePath := prepareFixture(t, "fixture-action-execution")
+
+	config := ActionConfig{
+		IacName:    "OpenTofu1.9",
+		IacType:    "TOFU",
+		IacVersion: "1.9.0",
+		TgVersion:  "0.72.9",
+	}
+
+	opt := RunActionOptions{ActionConfig: config, Tag: tag, FixturePath: fixturePath, TgDir: ""}
+	opt.Command = "plan"
+	output := runAction(t, opt)
+	assert.Contains(t, output, "You can apply this plan to save these new output values to the "+fetchIacType(config))
+}
+
 func runAction(t *testing.T, opts RunActionOptions) string {
 	logID := random.Random(1, 5000)
+
+	envVars := []string{
+		"INPUT_" + opts.ActionConfig.IacType + "_VERSION=" + opts.ActionConfig.IacVersion,
+		"INPUT_TG_VERSION=" + opts.ActionConfig.TgVersion,
+		"INPUT_TG_COMMAND=" + opts.Command,
+		"INPUT_PRE_EXEC_1=echo 'execute_INPUT_PRE_EXEC_1'",
+		"INPUT_POST_EXEC_1=echo 'execute_INPUT_POST_EXEC_1'",
+		fmt.Sprintf("GITHUB_OUTPUT=/tmp/github-action-logs.%d", logID),
+	}
+
+	if len(opts.TgDir) != 0 {
+		envVars = append(envVars, "INPUT_TG_DIR="+opts.TgDir)
+	}
+
 	dockerOpts := &docker.RunOptions{
-		EnvironmentVariables: []string{
-			"INPUT_" + opts.ActionConfig.IacType + "_VERSION=" + opts.ActionConfig.IacVersion,
-			"INPUT_TG_VERSION=" + opts.ActionConfig.TgVersion,
-			"INPUT_TG_COMMAND=" + opts.Command,
-			"INPUT_TG_DIR=" + opts.TgDir,
-			"INPUT_PRE_EXEC_1=echo 'execute_INPUT_PRE_EXEC_1'",
-			"INPUT_POST_EXEC_1=echo 'execute_INPUT_POST_EXEC_1'",
-			fmt.Sprintf("GITHUB_OUTPUT=/tmp/github-action-logs.%d", logID),
-		},
+		EnvironmentVariables: envVars,
 		Volumes: []string{
 			opts.FixturePath + ":/github/workspace",
 		},

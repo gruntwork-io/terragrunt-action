@@ -10,4 +10,6 @@ ENV ASDF_HASHICORP_TERRAFORM_VERSION_FILE=.terraform-version
 
 COPY ["./src/main.sh", "/action/main.sh"]
 
+WORKDIR /github/workspace
+
 ENTRYPOINT ["/action/main.sh"]
