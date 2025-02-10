@@ -81,6 +81,13 @@ func TestTerragruntAction(t *testing.T) {
 				t.Parallel()
 				testAutoApproveDelete(t, tc)
 			})
+
+			t.Run("testActionNotEmptyWorkingDir", func(t *testing.T) {
+				t.Parallel()
+				tc := tc
+				tc.tgDir = "/github/workspace"
+				testActionIsExecuted(t, tc)
+			})
 		})
 	}
 }
