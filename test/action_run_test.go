@@ -136,6 +136,7 @@ func prepareFixture(t *testing.T, fixtureDir string) string {
 }
 
 func fetchIacType(actionConfig ActionConfig) string {
+	// return Terraform if OpenTofu based on iacName value
 	if strings.ToLower(actionConfig.IacType) == "tf" {
 		return "Terraform"
 	}
