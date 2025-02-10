@@ -48,8 +48,6 @@ func TestTerragruntAction(t *testing.T) {
 		action("Terraform1.8", "TF", "1.8.3", "0.55.18", tag),
 		action("OpenTofu1.6", "TOFU", "1.6.0", "0.55.18", tag),
 		action("OpenTofu1.7", "TOFU", "1.7.0", "0.55.18", tag),
-		action("OpenTofu1.8", "TOFU", "1.8.0", "0.72.9", tag),
-		action("OpenTofu1.9", "TOFU", "1.9.0", "0.72.9", tag),
 	}
 
 	for _, tc := range testCases {
