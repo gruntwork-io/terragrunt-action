@@ -3,31 +3,38 @@ package test
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/gruntwork-io/terratest/modules/docker"
-	"github.com/gruntwork-io/terratest/modules/files"
 	"github.com/gruntwork-io/terratest/modules/random"
-	"github.com/stretchr/testify/assert"
+
+	"github.com/gruntwork-io/terratest/modules/files"
 	"github.com/stretchr/testify/require"
+
+	"github.com/gruntwork-io/terratest/modules/docker"
+	"github.com/stretchr/testify/assert"
 )
 
 type ActionConfig struct {
-	IacName    string
-	IacType    string
-	IacVersion string
-	TgVersion  string
+	iacName    string
+	iacType    string
+	iacVersion string
+	tgVersion  string
+	tgDir      string
+	tag        string
 }
 
-type RunActionOptions struct {
-	ActionConfig ActionConfig
-	Tag          string
-	FixturePath  string
-	Command      string
-	TgDir        string
-	SshAgent     bool
+func action(name, iacType, iacVersion, tgVersion, tag string) ActionConfig {
+
+	return ActionConfig{
+		iacName:    name,
+		iacType:    iacType,
+		iacVersion: iacVersion,
+		tgVersion:  tgVersion,
+		tag:        tag,
+	}
 }
 
 func TestTerragruntAction(t *testing.T) {
@@ -36,97 +43,170 @@ func TestTerragruntAction(t *testing.T) {
 	buildImage(t, "ssh-agent:local", "ssh-agent")
 
 	testCases := []ActionConfig{
-		{"Terraform1.5", "TF", "1.5.7", "0.55.18"},
-		{"Terraform1.7", "TF", "1.7.5", "0.55.18"},
-		{"Terraform1.8", "TF", "1.8.3", "0.55.18"},
-		{"OpenTofu1.6", "TOFU", "1.6.0", "0.55.18"},
-		{"OpenTofu1.7", "TOFU", "1.7.0", "0.55.18"},
-		{"OpenTofu1.8", "TOFU", "1.8.0", "0.72.9"},
-		{"OpenTofu1.9", "TOFU", "1.9.0", "0.72.9"},
+		action("Terraform1.5", "TF", "1.5.7", "0.55.18", tag),
+		action("Terraform1.7", "TF", "1.7.5", "0.55.18", tag),
+		action("Terraform1.8", "TF", "1.8.3", "0.55.18", tag),
+		action("OpenTofu1.6", "TOFU", "1.6.0", "0.55.18", tag),
+		action("OpenTofu1.7", "TOFU", "1.7.0", "0.55.18", tag),
+		action("OpenTofu1.8", "TOFU", "1.8.0", "0.72.9", tag),
+		action("OpenTofu1.9", "TOFU", "1.9.0", "0.72.9", tag),
 	}
 
 	for _, tc := range testCases {
 		tc := tc
-		t.Run(tc.IacName, func(t *testing.T) {
+
+		t.Run(tc.iacName, func(t *testing.T) {
 			t.Parallel()
-			fixturePath := prepareFixture(t, "fixture-action-execution")
-
-			opt := RunActionOptions{ActionConfig: tc, Tag: tag, FixturePath: fixturePath, TgDir: "/github/workspace"}
-
 			t.Run("testActionIsExecuted", func(t *testing.T) {
 				t.Parallel()
-				opt.Command = "plan"
-				output := runAction(t, opt)
-				assert.Contains(t, output, "You can apply this plan to save these new output values to the "+fetchIacType(tc))
+				testActionIsExecuted(t, tc)
+			})
+			t.Run("testActionIsExecutedSSHProject", func(t *testing.T) {
+				t.Parallel()
+				testActionIsExecutedSSHProject(t, tc)
+			})
+			t.Run("testOutputPlanIsUsedInApply", func(t *testing.T) {
+				t.Parallel()
+				testOutputPlanIsUsedInApply(t, tc)
+			})
+			t.Run("testGitWorkingAction", func(t *testing.T) {
+				t.Parallel()
+				testGitWorkingAction(t, tc)
+			})
+			t.Run("testRunAllIsExecute", func(t *testing.T) {
+				t.Parallel()
+				testRunAllIsExecuted(t, tc)
+			})
+			t.Run("testAutoApproveDelete", func(t *testing.T) {
+				t.Parallel()
+				testAutoApproveDelete(t, tc)
 			})
 		})
 	}
 }
 
-func TestTerragruntActionEmptyPath(t *testing.T) {
-	t.Parallel()
-	tag := buildActionImage(t)
-
+func testActionIsExecuted(t *testing.T, actionConfig ActionConfig) {
 	fixturePath := prepareFixture(t, "fixture-action-execution")
 
-	config := ActionConfig{
-		IacName:    "OpenTofu1.9",
-		IacType:    "TOFU",
-		IacVersion: "1.9.0",
-		TgVersion:  "0.72.9",
-	}
-
-	opt := RunActionOptions{ActionConfig: config, Tag: tag, FixturePath: fixturePath, TgDir: ""}
-	opt.Command = "plan"
-	output := runAction(t, opt)
-	assert.Contains(t, output, "You can apply this plan to save these new output values to the "+fetchIacType(config))
+	outputTF := runAction(t, actionConfig, false, fixturePath, "plan")
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchIacType(actionConfig))
 }
 
-func runAction(t *testing.T, opts RunActionOptions) string {
-	logID := random.Random(1, 5000)
+func testActionIsExecutedSSHProject(t *testing.T, actionConfig ActionConfig) {
+	fixturePath := prepareFixture(t, "fixture-action-execution-ssh")
 
+	outputTF := runAction(t, actionConfig, true, fixturePath, "plan")
+	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchIacType(actionConfig))
+}
+
+func testOutputPlanIsUsedInApply(t *testing.T, actionConfig ActionConfig) {
+	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+
+	output := runAction(t, actionConfig, false, fixturePath, "run-all plan -out=plan.out --terragrunt-log-level debug")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
+
+	output = runAction(t, actionConfig, false, fixturePath, "run-all apply plan.out --terragrunt-log-level debug")
+	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", actionConfig.iacName)
+}
+
+func testGitWorkingAction(t *testing.T, actionConfig ActionConfig) {
+	fixturePath := prepareFixture(t, "fixture-git-commands")
+	// init git repo in fixture path, run git init
+	_, err := exec.Command("git", "init", fixturePath).CombinedOutput()
+	if err != nil {
+		t.Fatalf("Error initializing git repo: %v", err)
+	}
+
+	output := runAction(t, actionConfig, true, fixturePath, "run-all plan -out=plan.out --terragrunt-log-level debug")
+	assert.Contains(t, output, fetchIacType(actionConfig)+" has been successfully initialized!", actionConfig.iacName)
+	assert.Contains(t, output, "execute_INPUT_POST_EXEC_1", actionConfig.iacName)
+	assert.Contains(t, output, "execute_INPUT_PRE_EXEC_1", actionConfig.iacName)
+}
+
+func testRunAllIsExecuted(t *testing.T, actionConfig ActionConfig) {
+	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+
+	output := runAction(t, actionConfig, false, fixturePath, "run-all plan")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
+
+	output = runAction(t, actionConfig, false, fixturePath, "run-all apply")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
+
+	output = runAction(t, actionConfig, false, fixturePath, "run-all destroy")
+	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy", actionConfig.iacName)
+	assert.Contains(t, output, "Destroy complete! Resources: 1 destroyed", actionConfig.iacName)
+}
+
+func testAutoApproveDelete(t *testing.T, actionConfig ActionConfig) {
+	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+
+	output := runAction(t, actionConfig, false, fixturePath, "run-all plan -out=plan.out")
+	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
+
+	output = runAction(t, actionConfig, false, fixturePath, "run-all apply plan.out")
+	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", actionConfig.iacName)
+
+	// run destroy with auto-approve
+	output = runAction(t, actionConfig, false, fixturePath, "run-all plan -destroy -out=destroy.out")
+	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy", actionConfig.iacName)
+
+	output = runAction(t, actionConfig, false, fixturePath, "run-all apply -destroy destroy.out")
+	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed", actionConfig.iacName)
+
+	// check that fixturePath can remove recursively
+	err := os.RemoveAll(fixturePath)
+	assert.NoError(t, err)
+}
+
+func runAction(t *testing.T, action ActionConfig, sshAgent bool, tgPath, command string) string {
+	logId := random.Random(1, 5000)
 	envVars := []string{
-		"INPUT_" + opts.ActionConfig.IacType + "_VERSION=" + opts.ActionConfig.IacVersion,
-		"INPUT_TG_VERSION=" + opts.ActionConfig.TgVersion,
-		"INPUT_TG_COMMAND=" + opts.Command,
+		"INPUT_" + action.iacType + "_VERSION=" + action.iacVersion,
+		"INPUT_TG_VERSION=" + action.tgVersion,
+		"INPUT_TG_COMMAND=" + command,
 		"INPUT_PRE_EXEC_1=echo 'execute_INPUT_PRE_EXEC_1'",
 		"INPUT_POST_EXEC_1=echo 'execute_INPUT_POST_EXEC_1'",
-		fmt.Sprintf("GITHUB_OUTPUT=/tmp/github-action-logs.%d", logID),
+		fmt.Sprintf("GITHUB_OUTPUT=/tmp/github-action-logs.%d", logId),
 	}
 
-	if len(opts.TgDir) != 0 {
-		envVars = append(envVars, "INPUT_TG_DIR="+opts.TgDir)
+	if action.tgDir != "" {
+		envVars = append(envVars, "INPUT_TG_DIR="+action.tgDir)
+	} else {
+		envVars = append(envVars, "INPUT_TG_DIR=/github/workspace")
+
 	}
 
-	dockerOpts := &docker.RunOptions{
+	opts := &docker.RunOptions{
 		EnvironmentVariables: envVars,
 		Volumes: []string{
-			opts.FixturePath + ":/github/workspace",
+			tgPath + ":/github/workspace",
 		},
 	}
 
-	// Configure SSH agent if needed
-	if opts.SshAgent {
+	// start ssh-agent container with SSH keys to allow clones over SSH
+	if sshAgent {
 		homeDir, err := os.UserHomeDir()
 		assert.NoError(t, err)
 		sshPath := filepath.Join(homeDir, ".ssh")
 
-		socketID := random.Random(1, 5000)
-		socketPath := fmt.Sprintf("/tmp/ssh-agent.sock.%d", socketID)
-
+		socketId := random.Random(1, 5000)
+		socketPath := fmt.Sprintf("/tmp/ssh-agent.sock.%d", socketId)
 		sshAgentID := docker.RunAndGetID(t, "ssh-agent:local", &docker.RunOptions{
-			Detach:               true,
-			Remove:               true,
-			EnvironmentVariables: []string{"SSH_AUTH_SOCK=" + socketPath},
-			Volumes:              []string{"/tmp:/tmp", sshPath + ":/root/keys"},
+			Detach: true,
+			Remove: true,
+			EnvironmentVariables: []string{
+				"SSH_AUTH_SOCK=" + socketPath,
+			},
+			Volumes: []string{
+				"/tmp:/tmp",
+				sshPath + ":/root/keys",
+			},
 		})
 		defer docker.Stop(t, []string{sshAgentID}, &docker.StopOptions{})
-
-		dockerOpts.Volumes = append(dockerOpts.Volumes, "/tmp:/tmp")
-		dockerOpts.EnvironmentVariables = append(dockerOpts.EnvironmentVariables, "SSH_AUTH_SOCK="+socketPath)
+		opts.Volumes = append(opts.Volumes, "/tmp:/tmp")
+		opts.EnvironmentVariables = append(opts.EnvironmentVariables, "SSH_AUTH_SOCK="+socketPath)
 	}
-
-	return docker.Run(t, opts.Tag, dockerOpts)
+	return docker.Run(t, action.tag, opts)
 }
 
 func prepareFixture(t *testing.T, fixtureDir string) string {
@@ -137,8 +217,9 @@ func prepareFixture(t *testing.T, fixtureDir string) string {
 
 func fetchIacType(actionConfig ActionConfig) string {
 	// return Terraform if OpenTofu based on iacName value
-	if strings.ToLower(actionConfig.IacType) == "tf" {
+	if strings.ToLower(actionConfig.iacType) == "tf" {
 		return "Terraform"
 	}
 	return "OpenTofu"
+
 }
