@@ -28,7 +28,5 @@ outputs:
     description: 'Terragrunt exit code'
 
 runs:
-  using: "composite"
-  steps:
-  - run: src/main.sh
-    shell: bash
+  using: 'docker'
+  image: './Dockerfile'
