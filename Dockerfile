@@ -8,6 +8,7 @@ ENV MISE_DATA_DIR=~/.local/share/mise
 ENV MISE_CACHE_DIR=~/.cache/mise
 ENV ASDF_HASHICORP_TERRAFORM_VERSION_FILE=.terraform-version
 
+USER root
 COPY ["./src/main.sh", "/action/main.sh"]
 
 ENTRYPOINT ["/action/main.sh"]
