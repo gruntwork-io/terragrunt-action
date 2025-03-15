@@ -33,6 +33,8 @@ outputs:
     description: 'Terragrunt execution output'
   tg_action_exit_code:
     description: 'Terragrunt exit code'
+  tg_output:
+    description: 'Terragrunt output'
 runs:
   using: 'docker'
   image: './Dockerfile'
