@@ -201,12 +201,20 @@ function main {
   local tg_arg_and_commands="${tg_command}"
   if [[ -n "${tofu_version}" ]]; then
     log "Using OpenTofu"
-    export TERRAGRUNT_TFPATH=tofu
+    if [[ "${tg_version}" > 0.48.5 ]]; then
+      export TG_TF_PATH=tofu
+    else
+      export TERRAGRUNT_TFPATH=tofu
+    fi
   fi
 
   if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* || "$tg_command" == "run-all apply"* || "$tg_command" == "run-all destroy"* ]]; then
     export TERRAGRUNT_NON_INTERACTIVE=true
-    export TF_INPUT=false
+    if [[ "${tg_version}" > 0.48.5 ]]; then
+      export TG_NON_INTERACTIVE=true
+    else
+      export TF_INPUT=false
+    fi
     export TF_IN_AUTOMATION=1
 
     if [[ "${tg_add_approve}" == "1" ]]; then
