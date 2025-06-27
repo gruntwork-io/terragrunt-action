@@ -21,7 +21,7 @@ Supported GitHub action inputs:
 
 This action supports two ways to specify tool versions:
 
-1. **Using `mise.toml` file** (recommended): Create a `mise.toml` or `.mise.toml` file in your repository root:
+1. **Using `mise.toml` file** (recommended): Create a `mise.toml` or `.mise.toml` file in your repository root to configure [mise](https://github.com/jdx/mise):
 
    ```toml
    [tools]
