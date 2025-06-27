@@ -8,19 +8,34 @@ Supported GitHub action inputs:
 
 | Input Name     | Description                                                       | Required                                  | Example values |
 |:---------------|:------------------------------------------------------------------|:-----------------------------------------:|:--------------:|
-| tf_version     | Terraform version to be used in Action execution                  | `true` if `tofu_version` is not supplied |     1.4.6      | 
-| tofu_version   | OpenTofu version to be used in Action execution                   | `true` if `tf_version` is not supplied   |     1.6.0      |
-| tg_version     | Terragrunt version to be user in Action execution                 | `true`                                   |     0.50.8     |
+| tg_version     | Terragrunt version to be used in Action execution                | `true` if no `mise.toml` file present    |     0.50.8     |
+| tofu_version   | OpenTofu version to be used in Action execution                  | `true` if no `mise.toml` file present    |     1.6.0      |
+| tf_path        | Path to Terraform binary (use to explicitly choose tofu/terraform) | `false`                                  | /usr/bin/tofu  |
 | tg_dir         | Directory in which Terragrunt will be invoked                     | `false`                                  |      work      |
 | tg_command     | Terragrunt command to execute                                     | `true`                                   |   plan/apply   |
 | tg_comment     | Add comment to Pull request with execution output                 | `false`                                  |      0/1       |
 | tg_add_approve | Automatically add "-auto-approve" to commands, enabled by default | `false`                                  |      0/1       |
+| github_token   | GitHub token for API authentication to avoid rate limits          | `false`                                  | ${{ github.token }} |
+
+## Tool Version Management
+
+This action supports two ways to specify tool versions:
+
+1. **Using `mise.toml` file** (recommended): Create a `mise.toml` or `.mise.toml` file in your repository root:
+
+   ```toml
+   [tools]
+   terragrunt = "0.67.0"
+   opentofu = "1.8.1"
+   ```
+
+2. **Using action inputs**: Specify versions directly in the action inputs when no `mise.toml` file is present.
 
 ## Environment Variables
 
 Supported environment variables:
 
-| Input Name             | Description                                                                                                  | 
+| Input Name             | Description                                                                                                  |
 |:-----------------------|:-------------------------------------------------------------------------------------------------------------|
 | GITHUB_TOKEN           | GitHub token used to add comment to Pull request                                                             |
 | TF_LOG                 | Log level for Terraform                                                                                      |
@@ -39,7 +54,52 @@ Outputs of GitHub action:
 
 ## Usage
 
-Example definition of Github Action workflow:
+### Example 1: Install tools only (no command execution)
+
+You can use this action to only install Terragrunt and OpenTofu/Terraform, then run terragrunt commands in subsequent steps:
+
+```yaml
+name: 'Terragrunt GitHub Actions'
+on:
+  - pull_request
+
+jobs:
+  terragrunt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@main
+
+      - name: Install Terragrunt and OpenTofu
+        uses: gruntwork-io/terragrunt-action@v2
+        with:
+          tg_version: '0.82.2'
+          tofu_version: '1.10.1'
+          # Note: no tg_command specified, so terragrunt won't be executed
+
+      - name: Run terragrunt plan
+        run: |
+          cd infrastructure/
+          terragrunt plan
+
+      - name: Run terragrunt apply
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd infrastructure/
+          terragrunt run --all --non-interactive apply
+```
+
+### Example 2: Using mise.toml file (recommended)
+
+Create a `mise.toml` file in your repository root:
+
+```toml
+[tools]
+terragrunt = "0.82.2"
+opentofu = "1.10.1"
+```
+
+Then use the action without specifying versions:
 
 ```yaml
 name: 'Terragrunt GitHub Actions'
@@ -47,8 +107,60 @@ on:
   - pull_request
 
 env:
-  tofu_version: '1.8.1'
-  tg_version: '0.67.0'
+  working_dir: 'project'
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@main
+
+      - name: Check terragrunt HCL
+        uses: gruntwork-io/terragrunt-action@v2
+        with:
+          tg_dir: ${{ env.working_dir }}
+          tg_command: 'hclfmt --terragrunt-check --terragrunt-diff'
+
+  plan:
+    runs-on: ubuntu-latest
+    needs: [ checks ]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@main
+
+      - name: Plan
+        uses: gruntwork-io/terragrunt-action@v2
+        with:
+          tg_dir: ${{ env.working_dir }}
+          tg_command: 'plan'
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [ plan ]
+    environment: 'prod'
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@main
+
+      - name: Deploy
+        uses: gruntwork-io/terragrunt-action@v2
+        with:
+          tg_dir: ${{ env.working_dir }}
+          tg_command: 'apply'
+```
+
+### Example 2: Using action inputs for tool versions
+
+```yaml
+name: 'Terragrunt GitHub Actions'
+on:
+  - pull_request
+
+env:
+  tg_version: '0.82.2'
+  tofu_version: '1.10.1'
   working_dir: 'project'
 
 jobs:
@@ -99,7 +211,18 @@ jobs:
           tg_command: 'apply'
 ```
 
-Example of passing custom code before running Terragrunt:
+### Example 4: Using tf_path to specify Terraform binary
+
+```yaml
+- name: Deploy with explicit terraform binary
+  uses: gruntwork-io/terragrunt-action@v2
+  with:
+    tf_path: "terraform"  # Explicitly use terraform even if both tofu and terraform are installed.
+    tg_dir: ${{ env.working_dir }}
+    tg_command: 'apply'
+```
+
+### Example 5: Passing custom code before running Terragrunt
 
 ```yaml
 ...
@@ -117,13 +240,13 @@ Example of passing custom code before running Terragrunt:
 ...
 ```
 
-Example of using GitHub cache for Terraform plugins (providers):
+### Example 6: Using GitHub cache for OpenTofu plugins (providers)
 
 ```yaml
 ...
 env:
-  tofu_version: 1.5.7
-  tg_version: 0.53.2
+  tg_version: 0.82.2
+  tofu_version: 1.10.1
   working_dir: project
   TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
 
@@ -134,11 +257,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@main
 
-      - name: Create Terraform Plugin Cache Dir
+      - name: Create OpenTofu Plugin Cache Dir
         run: mkdir -p $TF_PLUGIN_CACHE_DIR
 
-      - name: Terraform Plugin Cache
-        uses: actions/cache@v4.0.1
+      - name: OpenTofu Plugin Cache
+        uses: actions/cache@v4
         with:
           path: ${{ env.TF_PLUGIN_CACHE_DIR }}
           key: ${{ runner.os }}-terraform-plugin-cache-${{ hashFiles('**/.terraform.lock.hcl') }}
@@ -146,7 +269,7 @@ jobs:
       - name: Plan
         uses: gruntwork-io/terragrunt-action@v2
         env:
-          TF_PLUGIN_CACHE_DIR: /github/workspace/.terraform.d/plugin-cache
+          TF_PLUGIN_CACHE_DIR: ${{ env.TF_PLUGIN_CACHE_DIR }}
         with:
           tofu_version: ${{ env.tofu_version }}
           tg_version: ${{ env.tg_version }}

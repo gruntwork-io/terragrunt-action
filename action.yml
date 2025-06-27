@@ -8,15 +8,17 @@ branding:
 
 inputs:
   tg_version:
-    description: 'Terragrunt version to install.'
-    required: true
-  tf_version:
-    description: 'Terraform version to install.'
+    description: 'Terragrunt version to install (required if no mise.toml file present).'
+    required: false
   tofu_version:
-    description: 'OpenTofu version to install.'
+    description: 'OpenTofu version to install (required if no mise.toml and tf_version not set).'
+    required: false
+  tf_path:
+    description: 'Path to Terraform binary to use. This is typically used to explicitly decide to use tofu or terraform when both are installed.'
+    required: false
   tg_command:
     description: 'Terragrunt command to execute.'
-    required: true
+    required: false
   tg_dir:
     description: 'Directory in which Terragrunt will be executed. Default is the current working dir'
     required: false
@@ -25,14 +27,75 @@ inputs:
     default: '0'
     required: false
   tg_add_approve:
-    description: 'Add -auto-approve to commands which require changes to be applied'
+    description: 'Add -auto-approve to commands which require it when not running interactively'
     default: '1'
     required: false
+  github_token:
+    description: 'GitHub token for API authentication to avoid rate limits when installing tools'
+    required: false
+
 outputs:
   tg_action_output:
     description: 'Terragrunt execution output'
+    value: ${{ steps.terragrunt-exec.outputs.tg_action_output }}
   tg_action_exit_code:
     description: 'Terragrunt exit code'
+    value: ${{ steps.terragrunt-exec.outputs.tg_action_exit_code }}
+
 runs:
-  using: 'docker'
-  image: './Dockerfile'
+  using: 'composite'
+  steps:
+    - name: Check for mise.toml and validate inputs
+      id: mise-check
+      shell: bash
+      env:
+        INPUT_TG_VERSION: ${{ inputs.tg_version }}
+        INPUT_TOFU_VERSION: ${{ inputs.tofu_version }}
+      run: |
+        if [[ -f "mise.toml" || -f ".mise.toml" ]]; then
+          echo "mise_config_exists=true" >> $GITHUB_OUTPUT
+          echo "Found mise configuration file, will use it for tool versions"
+        else
+          echo "mise_config_exists=false" >> $GITHUB_OUTPUT
+
+          if [[ -z "${INPUT_TG_VERSION}" ]]; then
+            echo "ERROR: No mise.toml found, making 'tg_version' required."
+            exit 1
+          fi
+
+          if [[ -z "${INPUT_TOFU_VERSION}" ]]; then
+            echo "ERROR: No mise.toml found, making 'tofu_version' required"
+            exit 1
+          fi
+        fi
+
+    - name: Install tools with mise (using mise.toml)
+      if: steps.mise-check.outputs.mise_config_exists == 'true'
+      uses: jdx/mise-action@v2
+      with:
+        version: 2025.6.8
+        github_token: ${{ inputs.github_token || github.token }}
+
+    - name: Install tools with mise (using input versions)
+      if: steps.mise-check.outputs.mise_config_exists == 'false'
+      uses: jdx/mise-action@v2
+      with:
+        version: 2025.6.8
+        github_token: ${{ inputs.github_token || github.token }}
+        tool_versions: |
+          terragrunt ${{ inputs.tg_version }}
+          ${{ inputs.tofu_version && format('opentofu {0}', inputs.tofu_version) || '' }}
+
+    - name: Execute Terragrunt
+      if: ${{ inputs.tg_command != '' }}
+      id: terragrunt-exec
+      run: ${{ github.action_path }}/src/main.sh
+      shell: bash
+      env:
+        TG_NON_INTERACTIVE: true
+        TF_IN_AUTOMATION: 1
+        TG_TF_PATH: ${{ inputs.tf_path }}
+        INPUT_TG_COMMAND: ${{ inputs.tg_command }}
+        INPUT_TG_DIR: ${{ inputs.tg_dir }}
+        INPUT_TG_COMMENT: ${{ inputs.tg_comment }}
+        INPUT_TG_ADD_APPROVE: ${{ inputs.tg_add_approve }}
