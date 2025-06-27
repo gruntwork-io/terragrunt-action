@@ -95,6 +95,40 @@ function setup_post_exec {
   done <<< "$post_exec_vars"
 }
 
+# Check minimum supported version of Terragrunt
+function check_minimum_supported_version {
+  local -r min_version="0.77.22"
+  local tg_version
+
+  # Try to get terragrunt version, but fail open if we can't determine it
+  if ! tg_version=$(terragrunt --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+'); then
+    log "Warning: Could not determine Terragrunt version, continuing anyway"
+    return 0
+  fi
+
+  # If we got an empty version string, fail open
+  if [[ -z "${tg_version}" ]]; then
+    log "Warning: Could not parse Terragrunt version, continuing anyway"
+    return 0
+  fi
+
+  # Only check version if we successfully determined it
+  if [[ "$(printf '%s\n' "$min_version" "$tg_version" | sort -V | head -n1)" != "$min_version" ]]; then
+    log "Terragrunt version $tg_version is less than the minimum required version $min_version"
+    exit 1
+  fi
+
+  log "Terragrunt version $tg_version meets minimum requirement $min_version"
+}
+
+# Check Terragrunt is installed
+function check_terragrunt_installed {
+  if ! command -v terragrunt &> /dev/null; then
+    log "Terragrunt is not installed"
+    exit 1
+  fi
+}
+
 function main {
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
@@ -107,6 +141,9 @@ function main {
     log "tg_command is not set"
     exit 1
   fi
+
+  check_terragrunt_installed
+  check_minimum_supported_version
 
   setup_pre_exec
 
