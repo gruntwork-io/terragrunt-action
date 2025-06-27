@@ -24,9 +24,9 @@ func TestTerragruntCompositeAction(t *testing.T) {
 	t.Parallel()
 
 	testCases := []ActionConfig{
-		{"OpenTofu1.8", "TOFU", "1.8.1", "0.67.0"},
-		{"OpenTofu1.9", "TOFU", "1.9.0", "0.67.0"},
-		{"OpenTofu1.10", "TOFU", "1.10.1", "0.82.2"},
+		{"OpenTofu1.8", "tofu", "1.8.1", "0.67.0"},
+		{"OpenTofu1.9", "tofu", "1.9.0", "0.67.0"},
+		{"OpenTofu1.10", "tofu", "1.10.1", "0.82.2"},
 	}
 
 	for _, tc := range testCases {
@@ -165,7 +165,7 @@ fi
 	if tgVersion != "" {
 		env = append(env, "INPUT_TG_VERSION="+tgVersion)
 	}
-	if iacVersion != "" && iacType == "TOFU" {
+	if iacVersion != "" && iacType == "tofu" {
 		env = append(env, "INPUT_TOFU_VERSION="+iacVersion)
 	}
 	if command != "" {
