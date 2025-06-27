@@ -132,7 +132,7 @@ function main {
   trap 'rm -rf ${log_file}' EXIT
 
   local exit_code
-  exit_code=$(("${terragrunt_exit_code}"))
+  exit_code="${terragrunt_exit_code:-0}"
 
   local terragrunt_log_content
   terragrunt_log_content=$(cat "${log_file}")

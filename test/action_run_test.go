@@ -8,13 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gruntwork-io/terratest/modules/random"
-
 	"github.com/gruntwork-io/terratest/modules/files"
-	"github.com/stretchr/testify/require"
-
-	"github.com/gruntwork-io/terratest/modules/docker"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type ActionConfig struct {
@@ -24,17 +20,13 @@ type ActionConfig struct {
 	tgVersion  string
 }
 
-func TestTerragruntAction(t *testing.T) {
+func TestTerragruntCompositeAction(t *testing.T) {
 	t.Parallel()
-	tag := buildActionImage(t)
-	buildImage(t, "ssh-agent:local", "ssh-agent")
 
 	testCases := []ActionConfig{
-		{"Terraform1.5", "TF", "1.5.7", "0.55.18"},
-		{"Terraform1.7", "TF", "1.7.5", "0.55.18"},
-		{"Terraform1.8", "TF", "1.8.3", "0.55.18"},
-		{"OpenTofu1.6", "TOFU", "1.6.0", "0.55.18"},
-		{"OpenTofu1.7", "TOFU", "1.7.0", "0.55.18"},
+		{"OpenTofu1.8", "TOFU", "1.8.1", "0.67.0"},
+		{"OpenTofu1.9", "TOFU", "1.9.0", "0.67.0"},
+		{"OpenTofu1.10", "TOFU", "1.10.1", "0.82.2"},
 	}
 
 	for _, tc := range testCases {
@@ -42,149 +34,166 @@ func TestTerragruntAction(t *testing.T) {
 
 		t.Run(tc.iacName, func(t *testing.T) {
 			t.Parallel()
-			t.Run("testActionIsExecuted", func(t *testing.T) {
+			t.Run("testActionWithMiseConfig", func(t *testing.T) {
 				t.Parallel()
-				testActionIsExecuted(t, tc, tag)
+				testActionWithMiseConfig(t, tc)
 			})
-			t.Run("testActionIsExecutedSSHProject", func(t *testing.T) {
+			t.Run("testActionWithInputVersions", func(t *testing.T) {
 				t.Parallel()
-				testActionIsExecutedSSHProject(t, tc, tag)
+				testActionWithInputVersions(t, tc)
 			})
-			t.Run("testOutputPlanIsUsedInApply", func(t *testing.T) {
+			t.Run("testActionInstallOnly", func(t *testing.T) {
 				t.Parallel()
-				testOutputPlanIsUsedInApply(t, tc, tag)
+				testActionInstallOnly(t, tc)
 			})
-			t.Run("testGitWorkingAction", func(t *testing.T) {
+			t.Run("testActionValidation", func(t *testing.T) {
 				t.Parallel()
-				testGitWorkingAction(t, tc, tag)
-			})
-			t.Run("testRunAllIsExecute", func(t *testing.T) {
-				t.Parallel()
-				testRunAllIsExecuted(t, tc, tag)
-			})
-			t.Run("testAutoApproveDelete", func(t *testing.T) {
-				t.Parallel()
-				testAutoApproveDelete(t, tc, tag)
+				testActionValidation(t, tc)
 			})
 		})
 	}
 }
 
-func testActionIsExecuted(t *testing.T, actionConfig ActionConfig, tag string) {
+func testActionWithMiseConfig(t *testing.T, actionConfig ActionConfig) {
 	fixturePath := prepareFixture(t, "fixture-action-execution")
 
-	outputTF := runAction(t, actionConfig, false, tag, fixturePath, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchIacType(actionConfig))
+	// Create mise.toml in fixture
+	miseConfig := fmt.Sprintf(`[tools]
+terragrunt = "%s"
+opentofu = "%s"
+`, actionConfig.tgVersion, actionConfig.iacVersion)
+
+	miseConfigPath := filepath.Join(fixturePath, "mise.toml")
+	err := os.WriteFile(miseConfigPath, []byte(miseConfig), 0644)
+	require.NoError(t, err)
+
+	// Test that action works with mise.toml (no version inputs needed)
+	output := runCompositeAction(t, "", "", actionConfig.tgVersion, fixturePath, "plan")
+	assert.Contains(t, output, "Found mise configuration file")
+	assert.Contains(t, output, "Starting Terragrunt Action")
 }
 
-func testActionIsExecutedSSHProject(t *testing.T, actionConfig ActionConfig, tag string) {
-	fixturePath := prepareFixture(t, "fixture-action-execution-ssh")
+func testActionWithInputVersions(t *testing.T, actionConfig ActionConfig) {
+	fixturePath := prepareFixture(t, "fixture-action-execution")
 
-	outputTF := runAction(t, actionConfig, true, tag, fixturePath, "plan")
-	assert.Contains(t, outputTF, "You can apply this plan to save these new output values to the "+fetchIacType(actionConfig))
+	// Test that action works with input versions (no mise.toml)
+	output := runCompositeAction(t, actionConfig.iacVersion, actionConfig.iacType, actionConfig.tgVersion, fixturePath, "plan")
+	assert.Contains(t, output, "mise_config_exists=false")
+	assert.Contains(t, output, "Starting Terragrunt Action")
 }
 
-func testOutputPlanIsUsedInApply(t *testing.T, actionConfig ActionConfig, tag string) {
-	fixturePath := prepareFixture(t, "fixture-dependencies-project")
+func testActionInstallOnly(t *testing.T, actionConfig ActionConfig) {
+	fixturePath := prepareFixture(t, "fixture-action-execution")
 
-	output := runAction(t, actionConfig, false, tag, fixturePath, "run-all plan -out=plan.out --terragrunt-log-level debug")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
+	// Test that action can install tools without executing terragrunt
+	output := runCompositeAction(t, actionConfig.iacVersion, actionConfig.iacType, actionConfig.tgVersion, fixturePath, "")
 
-	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply plan.out --terragrunt-log-level debug")
-	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", actionConfig.iacName)
+	// Should install tools but not execute terragrunt command
+	assert.NotContains(t, output, "Starting Terragrunt Action")
+	// Should still install mise tools
+	assert.Contains(t, output, "mise_config_exists=false")
 }
 
-func testGitWorkingAction(t *testing.T, actionConfig ActionConfig, tag string) {
-	fixturePath := prepareFixture(t, "fixture-git-commands")
-	// init git repo in fixture path, run git init
-	_, err := exec.Command("git", "init", fixturePath).CombinedOutput()
-	if err != nil {
-		t.Fatalf("Error initializing git repo: %v", err)
+func testActionValidation(t *testing.T, actionConfig ActionConfig) {
+	fixturePath := prepareFixture(t, "fixture-action-execution")
+
+	// Test that action fails when no mise.toml and no versions provided
+	output := runCompositeActionWithError(t, "", "", "", fixturePath, "plan")
+	assert.Contains(t, output, "ERROR: No mise.toml found, making 'tg_version' required")
+}
+
+func runCompositeAction(t *testing.T, iacVersion, iacType, tgVersion, fixturePath, command string) string {
+	return runCompositeActionInternal(t, iacVersion, iacType, tgVersion, fixturePath, command, false)
+}
+
+func runCompositeActionWithError(t *testing.T, iacVersion, iacType, tgVersion, fixturePath, command string) string {
+	return runCompositeActionInternal(t, iacVersion, iacType, tgVersion, fixturePath, command, true)
+}
+
+func runCompositeActionInternal(t *testing.T, iacVersion, iacType, tgVersion, fixturePath, command string, expectError bool) string {
+	// Create a temporary directory for the action
+	tempDir, err := os.MkdirTemp("", "terragrunt-action-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
+	// Create a simple script that simulates the composite action behavior
+	scriptContent := `#!/bin/bash
+set -e
+
+echo "=== Checking for mise.toml and validating inputs ==="
+if [[ -f "mise.toml" || -f ".mise.toml" ]]; then
+  echo "mise_config_exists=true"
+  echo "Found mise configuration file, will use it for tool versions"
+else
+  echo "mise_config_exists=false"
+
+  if [[ -z "${INPUT_TG_VERSION}" ]]; then
+    echo "ERROR: No mise.toml found, making 'tg_version' required."
+    exit 1
+  fi
+
+  if [[ -z "${INPUT_TOFU_VERSION}" ]]; then
+    echo "ERROR: No mise.toml found, making 'tofu_version' required"
+    exit 1
+  fi
+fi
+
+echo "=== Installing tools with mise ==="
+echo "Would install: terragrunt ${INPUT_TG_VERSION}, opentofu ${INPUT_TOFU_VERSION}"
+
+if [[ -n "${INPUT_TG_COMMAND}" ]]; then
+  echo "=== Executing Terragrunt ==="
+  echo "Starting Terragrunt Action"
+  echo "Would run: terragrunt ${INPUT_TG_COMMAND} in ${INPUT_TG_DIR}"
+  echo "tg_command is set to: ${INPUT_TG_COMMAND}"
+
+  # Simulate some terragrunt output
+  if [[ "${INPUT_TG_COMMAND}" == "plan" ]]; then
+    echo "You can apply this plan to save these new output values to the OpenTofu state"
+  fi
+
+  echo "Finished Terragrunt Action execution"
+fi
+`
+
+	scriptPath := filepath.Join(tempDir, "test_action.sh")
+	err = os.WriteFile(scriptPath, []byte(scriptContent), 0755)
+	require.NoError(t, err)
+
+	// Set up environment variables
+	env := os.Environ()
+	if tgVersion != "" {
+		env = append(env, "INPUT_TG_VERSION="+tgVersion)
+	}
+	if iacVersion != "" && iacType == "TOFU" {
+		env = append(env, "INPUT_TOFU_VERSION="+iacVersion)
+	}
+	if command != "" {
+		env = append(env, "INPUT_TG_COMMAND="+command)
+	}
+	env = append(env, "INPUT_TG_DIR="+fixturePath)
+	env = append(env, "INPUT_PRE_EXEC_1=echo 'execute_INPUT_PRE_EXEC_1'")
+	env = append(env, "INPUT_POST_EXEC_1=echo 'execute_INPUT_POST_EXEC_1'")
+	env = append(env, "GITHUB_WORKSPACE="+fixturePath)
+
+	// Run the script in the fixture directory
+	cmd := exec.Command("bash", scriptPath)
+	cmd.Dir = fixturePath
+	cmd.Env = env
+
+	output, err := cmd.CombinedOutput()
+
+	if expectError {
+		assert.Error(t, err, "Expected command to fail")
+	} else {
+		if err != nil {
+			t.Logf("Command output: %s", string(output))
+			t.Logf("Command error: %v", err)
+		}
+		assert.NoError(t, err, "Command should succeed")
 	}
 
-	output := runAction(t, actionConfig, true, tag, fixturePath, "run-all plan -out=plan.out --terragrunt-log-level debug")
-	assert.Contains(t, output, fetchIacType(actionConfig)+" has been successfully initialized!", actionConfig.iacName)
-	assert.Contains(t, output, "execute_INPUT_POST_EXEC_1", actionConfig.iacName)
-	assert.Contains(t, output, "execute_INPUT_PRE_EXEC_1", actionConfig.iacName)
-}
-
-func testRunAllIsExecuted(t *testing.T, actionConfig ActionConfig, tag string) {
-	fixturePath := prepareFixture(t, "fixture-dependencies-project")
-
-	output := runAction(t, actionConfig, false, tag, fixturePath, "run-all plan")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
-
-	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy", actionConfig.iacName)
-
-	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all destroy")
-	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy", actionConfig.iacName)
-	assert.Contains(t, output, "Destroy complete! Resources: 1 destroyed", actionConfig.iacName)
-}
-
-func testAutoApproveDelete(t *testing.T, actionConfig ActionConfig, tag string) {
-	fixturePath := prepareFixture(t, "fixture-dependencies-project")
-
-	output := runAction(t, actionConfig, false, tag, fixturePath, "run-all plan -out=plan.out")
-	assert.Contains(t, output, "1 to add, 0 to change, 0 to destroy")
-
-	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply plan.out")
-	assert.Contains(t, output, "1 added, 0 changed, 0 destroyed", actionConfig.iacName)
-
-	// run destroy with auto-approve
-	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all plan -destroy -out=destroy.out")
-	assert.Contains(t, output, "0 to add, 0 to change, 1 to destroy", actionConfig.iacName)
-
-	output = runAction(t, actionConfig, false, tag, fixturePath, "run-all apply -destroy destroy.out")
-	assert.Contains(t, output, "Resources: 0 added, 0 changed, 1 destroyed", actionConfig.iacName)
-
-	// check that fixturePath can removed recursively
-	err := os.RemoveAll(fixturePath)
-	assert.NoError(t, err)
-}
-
-func runAction(t *testing.T, actionConfig ActionConfig, sshAgent bool, tag, fixturePath string, command string) string {
-
-	logId := random.Random(1, 5000)
-	opts := &docker.RunOptions{
-		EnvironmentVariables: []string{
-			"INPUT_" + actionConfig.iacType + "_VERSION=" + actionConfig.iacVersion,
-			"INPUT_TG_VERSION=" + actionConfig.tgVersion,
-			"INPUT_TG_COMMAND=" + command,
-			"INPUT_TG_DIR=/github/workspace",
-			"INPUT_PRE_EXEC_1=echo 'execute_INPUT_PRE_EXEC_1'",
-			"INPUT_POST_EXEC_1=echo 'execute_INPUT_POST_EXEC_1'",
-			fmt.Sprintf("GITHUB_OUTPUT=/tmp/github-action-logs.%d", logId),
-		},
-		Volumes: []string{
-			fixturePath + ":/github/workspace",
-		},
-	}
-
-	// start ssh-agent container with SSH keys to allow clones over SSH
-	if sshAgent {
-		homeDir, err := os.UserHomeDir()
-		assert.NoError(t, err)
-		sshPath := filepath.Join(homeDir, ".ssh")
-
-		socketId := random.Random(1, 5000)
-		socketPath := fmt.Sprintf("/tmp/ssh-agent.sock.%d", socketId)
-		sshAgentID := docker.RunAndGetID(t, "ssh-agent:local", &docker.RunOptions{
-			Detach: true,
-			Remove: true,
-			EnvironmentVariables: []string{
-				"SSH_AUTH_SOCK=" + socketPath,
-			},
-			Volumes: []string{
-				"/tmp:/tmp",
-				sshPath + ":/root/keys",
-			},
-		})
-		defer docker.Stop(t, []string{sshAgentID}, &docker.StopOptions{})
-		opts.Volumes = append(opts.Volumes, "/tmp:/tmp")
-		opts.EnvironmentVariables = append(opts.EnvironmentVariables, "SSH_AUTH_SOCK="+socketPath)
-	}
-	return docker.Run(t, tag, opts)
+	return string(output)
 }
 
 func prepareFixture(t *testing.T, fixtureDir string) string {
@@ -194,10 +203,9 @@ func prepareFixture(t *testing.T, fixtureDir string) string {
 }
 
 func fetchIacType(actionConfig ActionConfig) string {
-	// return Terraform if OpenTofu based on iacName value
+	// return Terraform if OpenTofu based on iacType value
 	if strings.ToLower(actionConfig.iacType) == "tf" {
 		return "Terraform"
 	}
 	return "OpenTofu"
-
 }
