@@ -4,7 +4,7 @@ env: &env
     GRUNTWORK_INSTALLER_VERSION: v0.0.36
     MODULE_CI_VERSION: v0.54.0
     TERRATEST_LOG_PARSER_VERSION: v0.37.0
-    GOLANG_VERSION: 1.21.1
+    GOLANG_VERSION: 1.24.4
 defaults: &defaults
   machine:
     enabled: true
@@ -52,7 +52,7 @@ jobs:
   precommit:
     <<: *env
     docker:
-      - image: 087285199408.dkr.ecr.us-east-1.amazonaws.com/circle-ci-test-image-base:go1.21.9-tf1.5-tg39.1-pck1.8-ci54.0
+      - image: 087285199408.dkr.ecr.us-east-1.amazonaws.com/circle-ci-test-image-base:go1.24.4-tf1.5-tg58.8-pck1.8-ci58.2
     steps:
       - checkout
       # Fail the build if the pre-commit hooks don't pass. Note: if you run pre-commit install locally, these hooks will
@@ -67,7 +67,7 @@ jobs:
           at: /home/circleci
       - run:
           <<: *install_gruntwork_utils
-      - run: 
+      - run:
           name: Run tests
           command: |
             mkdir -p /tmp/logs

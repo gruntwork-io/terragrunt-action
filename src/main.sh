@@ -26,38 +26,6 @@ function clean_multiline_text {
   echo "${output}"
 }
 
-# install and switch particular terraform version
-function install_tofu {
-  local -r version="$1"
-  if [[ "${version}" == "none" ]]; then
-    return
-  fi
-  log "Installing OpenTofu version ${version}"
-  mise install -y opentofu@"${version}"
-  mise use -g opentofu@"${version}"
-}
-
-function install_terraform {
-  local -r version="$1"
-  if [[ "${version}" == "none" ]]; then
-    return
-  fi
-  log "Installing Terraform version ${version}"
-  mise install terraform@"${version}"
-  mise use -g terraform@"${version}"
-}
-
-# install passed terragrunt version
-function install_terragrunt {
-  local -r version="$1"
-  if [[ "${version}" == "none" ]]; then
-    return
-  fi
-  log "Installing Terragrunt version ${version}"
-  mise install -y terragrunt@"${version}"
-  mise use -g terragrunt@"${version}"
-}
-
 # run terragrunt commands in specified directory
 # arguments: directory and terragrunt command
 # output variables:
@@ -65,7 +33,8 @@ function install_terragrunt {
 # terragrunt_exit_code exit code of terragrunt command
 function run_terragrunt {
   local -r dir="$1"
-  local -r command=($2)
+  local -a command
+  read -ra command <<< "$2"
 
   # terragrunt_log_file can be used later as file with execution output
   terragrunt_log_file=$(mktemp)
@@ -94,24 +63,6 @@ function comment {
   echo "{\"body\": \"$escaped_message\"}" > "$tmpfile"
   curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d @"$tmpfile" "$comment_url"
   rm "$tmpfile"
-}
-
-function setup_git {
-  # Avoid git permissions warnings
-  git config --global --add safe.directory /github/workspace
-  # Also trust any subfolder within workspace
-  git config --global --add safe.directory "*"
-}
-
-function setup_permissions {
-  local -r dir="${1}"
-  local -r uid="${2}"
-  local -r gid="${3}"
-
-  if [[ -e "${dir}" ]]; then
-      sudo chown -R "$uid:$gid" "${dir}"
-      sudo chmod -R o+rw "${dir}"
-  fi
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
@@ -144,93 +95,81 @@ function setup_post_exec {
   done <<< "$post_exec_vars"
 }
 
+# Check minimum supported version of Terragrunt
+function check_minimum_supported_version {
+  local -r min_version="0.77.22"
+  local tg_version
+
+  # Try to get terragrunt version, but fail open if we can't determine it
+  if ! tg_version=$(terragrunt --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+'); then
+    log "Warning: Could not determine Terragrunt version, continuing anyway"
+    return 0
+  fi
+
+  # If we got an empty version string, fail open
+  if [[ -z "${tg_version}" ]]; then
+    log "Warning: Could not parse Terragrunt version, continuing anyway"
+    return 0
+  fi
+
+  # Only check version if we successfully determined it
+  if [[ "$(printf '%s\n' "$min_version" "$tg_version" | sort -V | head -n1)" != "$min_version" ]]; then
+    log "Terragrunt version $tg_version is less than the minimum required version $min_version"
+    exit 1
+  fi
+
+  log "Terragrunt version $tg_version meets minimum requirement $min_version"
+}
+
+# Check Terragrunt is installed
+function check_terragrunt_installed {
+  if ! command -v terragrunt &> /dev/null; then
+    log "Terragrunt is not installed"
+    exit 1
+  fi
+}
+
 function main {
   log "Starting Terragrunt Action"
   trap 'log "Finished Terragrunt Action execution"' EXIT
-  local -r tf_version=${INPUT_TF_VERSION}
-  local -r tg_version=${INPUT_TG_VERSION}
-  local -r tofu_version=${INPUT_TOFU_VERSION}
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
-  local -r tg_dir=${INPUT_TG_DIR:-${pwd}} # an absolute path
-
-  if [[ (-z "${tf_version}") && (-z "${tofu_version}")]]; then
-    log "One of tf_version or tofu_version must be set"
-    exit 1
-  fi
-
-  if [[ (-n "${tf_version}") && (-n "${tofu_version}")]]; then
-    log "Only one of tf_version and tofu_version may be set"
-    exit 1
-  fi
-
-  if [[ -z "${tg_version}" ]]; then
-    log "tg_version is not set"
-    exit 1
-  fi
+  local -r tg_dir=${INPUT_TG_DIR:-${GITHUB_WORKSPACE}} # use GitHub workspace as default
 
   if [[ -z "${tg_command}" ]]; then
     log "tg_command is not set"
     exit 1
   fi
-  setup_git
-  # fetch the user id and group id under which the github action is running
-  local -r uid=$(stat -c "%u" "/github/workspace")
-  local -r gid=$(stat -c "%g" "/github/workspace")
-  local -r action_user=$(whoami)
 
-  setup_permissions "${tg_dir}" "${action_user}" "${action_user}"
-  trap 'setup_permissions $tg_dir $uid $guid' EXIT
+  check_terragrunt_installed
+  check_minimum_supported_version
+
   setup_pre_exec
 
-  if [[ -n "${tf_version}" ]]; then
-    install_terraform "${tf_version}"
-  fi
-  if [[ -n "${tofu_version}" ]]; then
-    if [[ "${tg_version}" < 0.52.0 ]]; then
-      log "Terragrunt version ${tg_version} is incompatible with OpenTofu. Terragrunt version 0.52.0 or greater must be specified in order to use OpenTofu."
-      exit 1
-    fi
-    install_tofu "${tofu_version}"
-  fi
-
-  install_terragrunt "${tg_version}"
-
   # add auto approve for apply and destroy commands
-  local tg_arg_and_commands="${tg_command}"
-  if [[ -n "${tofu_version}" ]]; then
-    log "Using OpenTofu"
-    export TERRAGRUNT_TFPATH=tofu
-  fi
+  local tg_command_and_args="${tg_command}"
 
-  if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* || "$tg_command" == "run-all apply"* || "$tg_command" == "run-all destroy"* ]]; then
-    export TERRAGRUNT_NON_INTERACTIVE=true
-    export TF_INPUT=false
-    export TF_IN_AUTOMATION=1
-
+  if [[ "$tg_command" == "apply"* || "$tg_command" == "destroy"* ]]; then
     if [[ "${tg_add_approve}" == "1" ]]; then
-      local approvePattern="^(apply|destroy|run-all apply|run-all destroy)"
+      local approvePattern="^(apply|destroy)"
       # split command and arguments to insert -auto-approve
-      if [[ $tg_arg_and_commands =~ $approvePattern ]]; then
+      if [[ $tg_command_and_args =~ $approvePattern ]]; then
           local matchedCommand="${BASH_REMATCH[0]}"
-          local remainingArgs="${tg_arg_and_commands#$matchedCommand}"
-          tg_arg_and_commands="${matchedCommand} -auto-approve ${remainingArgs}"
+          local remainingArgs="${tg_command_and_args#$matchedCommand}"
+          tg_command_and_args="${matchedCommand} -auto-approve ${remainingArgs}"
       fi
     fi
   fi
-  run_terragrunt "${tg_dir}" "${tg_arg_and_commands}"
-  setup_permissions "${tg_dir}"
-  setup_permissions "${terragrunt_log_file}"
-  setup_permissions "${GITHUB_OUTPUT}"
-  # setup permissions for the output files
+
+  run_terragrunt "${tg_dir}" "${tg_command_and_args}"
   setup_post_exec
 
   local -r log_file="${terragrunt_log_file}"
   trap 'rm -rf ${log_file}' EXIT
 
   local exit_code
-  exit_code=$(("${terragrunt_exit_code}"))
+  exit_code="${terragrunt_exit_code:-0}"
 
   local terragrunt_log_content
   terragrunt_log_content=$(cat "${log_file}")
