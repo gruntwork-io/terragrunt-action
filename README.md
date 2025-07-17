@@ -13,7 +13,7 @@ Supported GitHub action inputs:
 | Input Name     | Description                                                        | Required                                                                    | Example values      |
 |:---------------|:-------------------------------------------------------------------|:---------------------------------------------------------------------------:|:-------------------:|
 | tg_version     | Terragrunt version to be used in Action execution                  | `true` if no `mise.toml` file present                                       |     0.50.8          |
-| tofu_version   | OpenTofu version to be used in Action execution                    | `true` if `tf_path` is not provided ant the file `mise.toml` is not present |     1.6.0           |
+| tofu_version   | OpenTofu version to be used in Action execution                    | `true` if `tf_path` is not provided and the file `mise.toml` is not present |     1.6.0           |
 | tf_path        | Path to Terraform binary (use to explicitly choose tofu/terraform) | `false`                                                                     | /usr/bin/tofu       |
 | tg_dir         | Directory in which Terragrunt will be invoked                      | `false`                                                                     |      work           |
 | tg_command     | Terragrunt command to execute                                      | `false`                                                                     |   plan/apply        |
