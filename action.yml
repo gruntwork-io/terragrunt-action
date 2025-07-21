@@ -49,6 +49,7 @@ runs:
       id: mise-check
       shell: bash
       env:
+        INPUT_TF_PATH: ${{ inputs.tf_path }}
         INPUT_TG_VERSION: ${{ inputs.tg_version }}
         INPUT_TOFU_VERSION: ${{ inputs.tofu_version }}
       run: |
@@ -63,8 +64,8 @@ runs:
             exit 1
           fi
 
-          if [[ -z "${INPUT_TOFU_VERSION}" ]]; then
-            echo "ERROR: No mise.toml found, making 'tofu_version' required"
+         if [[ -z "${INPUT_TOFU_VERSION}" && -z "${INPUT_TF_PATH}" ]]; then
+            echo "ERROR: No mise.toml found, so 'tofu_version' is required unless 'tf_path' is provided."
             exit 1
           fi
         fi
