@@ -33,7 +33,6 @@ inputs:
   github_token:
     description: 'GitHub token for API authentication to avoid rate limits when installing tools'
     required: false
-    default: ${{ github.token }}
 
 outputs:
   tg_action_output:
@@ -76,17 +75,19 @@ runs:
       uses: jdx/mise-action@v2
       with:
         version: 2025.6.8
-        github_token: ${{ inputs.github_token || github.token }}
+      env:
+        MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
 
     - name: Install tools with mise (using input versions)
       if: steps.mise-check.outputs.mise_config_exists == 'false'
       uses: jdx/mise-action@v2
       with:
         version: 2025.6.8
-        github_token: ${{ inputs.github_token || github.token }}
         tool_versions: |
           terragrunt ${{ inputs.tg_version }}
           ${{ inputs.tofu_version && format('opentofu {0}', inputs.tofu_version) || '' }}
+      env:
+        MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
 
     - name: Execute Terragrunt
       if: ${{ inputs.tg_command != '' }}
