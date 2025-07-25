@@ -33,6 +33,7 @@ inputs:
   github_token:
     description: 'GitHub token for API authentication to avoid rate limits when installing tools'
     required: false
+    default: ${{ github.token }}
 
 outputs:
   tg_action_output:
