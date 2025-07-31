@@ -177,7 +177,7 @@ function main {
   local terragrunt_output
   terragrunt_output=$(clean_colors "${terragrunt_log_content}")
 
-  if [[ "${tg_comment}" == "1" ]]; then
+  if [[ "${tg_comment}" == "1" || "${tg_comment}" == "true" ]]; then
     comment "<details>
 <summary>Execution result of \"$tg_command\" in \"${tg_dir}\"</summary>
 
