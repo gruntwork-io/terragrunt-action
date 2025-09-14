@@ -86,6 +86,7 @@ runs:
         tool_versions: |
           terragrunt ${{ inputs.tg_version }}
           ${{ inputs.tofu_version && format('opentofu {0}', inputs.tofu_version) || '' }}
+        install_args: "terragrunt ${{ inputs.tofu_version && 'opentofu' || '' }}"
       env:
         MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
 
