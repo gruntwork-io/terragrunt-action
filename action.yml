@@ -59,9 +59,9 @@ runs:
         version: 2025.6.8
         mise_toml: |
           [tools]
-          ${{ inputs.tg_version && format('terragrunt = {0}', inputs.tg_version) || '' }}
-          ${{ inputs.tf_version && format('terraform = {0}', inputs.tf_version) || '' }}
-          ${{ inputs.tofu_version && format('opentofu = {0}', inputs.tofu_version) || '' }}
+          ${{ inputs.tg_version && format('terragrunt = "{0}"', inputs.tg_version) || '' }}
+          ${{ inputs.tf_version && format('terraform = "{0}"', inputs.tf_version) || '' }}
+          ${{ inputs.tofu_version && format('opentofu = "{0}"', inputs.tofu_version) || '' }}
         github_token: ${{ inputs.github_token || github.token }}
 
     - name: Execute Terragrunt
