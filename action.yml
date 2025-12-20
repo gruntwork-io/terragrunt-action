@@ -72,7 +72,7 @@ runs:
 
     - name: Install tools with mise (using mise.toml)
       if: steps.mise-check.outputs.mise_config_exists == 'true'
-      uses: jdx/mise-action@v2
+      uses: 5ico/mise-action@v2
       with:
         version: 2025.6.8
       env:
@@ -80,7 +80,7 @@ runs:
 
     - name: Install tools with mise (using input versions)
       if: steps.mise-check.outputs.mise_config_exists == 'false'
-      uses: jdx/mise-action@v2
+      uses: 5ico/mise-action@v2
       with:
         version: 2025.6.8
         tool_versions: |
