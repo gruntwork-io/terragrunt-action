@@ -30,6 +30,10 @@ inputs:
     description: 'Add -auto-approve to commands which require it when not running interactively'
     default: '1'
     required: false
+  tg_skip_action_log_output:
+    description: 'Skip including the terragrunt log output in the github action output (useful for large outputs)'
+    default: '0'
+    required: false
   github_token:
     description: 'GitHub token for API authentication to avoid rate limits when installing tools'
     required: false
@@ -102,3 +106,4 @@ runs:
         INPUT_TG_DIR: ${{ inputs.tg_dir }}
         INPUT_TG_COMMENT: ${{ inputs.tg_comment }}
         INPUT_TG_ADD_APPROVE: ${{ inputs.tg_add_approve }}
+        INPUT_TG_SKIP_ACTION_LOG_OUTPUT: ${{ inputs.tg_skip_action_log_output }}
