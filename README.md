@@ -10,16 +10,17 @@ The current minimum supported version of Terragrunt is 0.77.22.
 
 Supported GitHub action inputs:
 
-| Input Name     | Description                                                        | Required                                                                    | Example values      |
-|:---------------|:-------------------------------------------------------------------|:---------------------------------------------------------------------------:|:-------------------:|
-| tg_version     | Terragrunt version to be used in Action execution                  | `true` if no `mise.toml` file present                                       |     0.50.8          |
-| tofu_version   | OpenTofu version to be used in Action execution                    | `true` if `tf_path` is not provided and the file `mise.toml` is not present |     1.6.0           |
-| tf_path        | Path to Terraform binary (use to explicitly choose tofu/terraform) | `false`                                                                     | /usr/bin/tofu       |
-| tg_dir         | Directory in which Terragrunt will be invoked                      | `false`                                                                     |      work           |
-| tg_command     | Terragrunt command to execute                                      | `false`                                                                     |   plan/apply        |
-| tg_comment     | Add comment to Pull request with execution output                  | `false`                                                                     |      0/1            |
-| tg_add_approve | Automatically add "-auto-approve" to commands, enabled by default  | `false`                                                                     |      0/1            |
-| github_token   | GitHub token for API authentication to avoid rate limits           | `false`                                                                     | ${{ github.token }} |
+| Input Name        | Description                                                                                | Required                                                                    | Example values      |
+|:------------------|:-------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------|:--------------------|
+| tg_version        | Terragrunt version to be used in Action execution                                          | `true` if no `mise.toml` file present                                       | 0.50.8              |
+| tofu_version      | OpenTofu version to be used in Action execution                                            | `true` if `tf_path` is not provided and the file `mise.toml` is not present | 1.6.0               |
+| tf_path           | Path to Terraform binary (use to explicitly choose tofu/terraform)                         | `false`                                                                     | /usr/bin/tofu       |
+| tg_dir            | Directory in which Terragrunt will be invoked                                              | `false`                                                                     | work                |
+| tg_command        | Terragrunt command to execute                                                              | `false`                                                                     | plan/apply          |
+| tg_comment        | Add comment to Pull request with execution output                                          | `false`                                                                     | 0/1                 |
+| tg_add_approve    | Automatically add "-auto-approve" to commands, enabled by default                          | `false`                                                                     | 0/1                 |
+| tg_output_capture | Capture Terragrunt execution output, enabled by default. Set to `0` for very large outputs | `false`                                                                     | 0/1                 |
+| github_token      | GitHub token for API authentication to avoid rate limits                                   | `false`                                                                     | ${{ github.token }} |
 
 ## Tool Version Management
 
@@ -54,7 +55,7 @@ Outputs of GitHub action:
 | Input Name          | Description                     |
 |:--------------------|:--------------------------------|
 | tg_action_exit_code | Terragrunt exit code            |
-| tg_action_output    | Terragrunt output as plain text |
+| tg_action_output    | Terragrunt output as plain text. Only emitted when `tg_output_capture` is `1` (the default) |
 
 ## Usage
 
