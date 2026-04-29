@@ -135,6 +135,7 @@ function main {
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
+  local -r tg_output_capture=${INPUT_TG_OUTPUT_CAPTURE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-${GITHUB_WORKSPACE}} # use GitHub workspace as default
 
   if [[ -z "${tg_command}" ]]; then
@@ -191,9 +192,13 @@ ${terragrunt_output}
 
   echo "tg_action_exit_code=${exit_code}" >> "${GITHUB_OUTPUT}"
 
-  local tg_action_output
-  tg_action_output=$(clean_multiline_text "${terragrunt_output}")
-  echo "tg_action_output=${tg_action_output}" >> "${GITHUB_OUTPUT}"
+  if [[ "${tg_output_capture}" == "1" ]]; then
+    local tg_action_output
+    tg_action_output=$(clean_multiline_text "${terragrunt_output}")
+    echo "tg_action_output=${tg_action_output}" >> "${GITHUB_OUTPUT}"
+  else
+    log "Skipping tg_action_output capture (tg_output_capture=${tg_output_capture})"
+  fi
 
   exit $exit_code
 }

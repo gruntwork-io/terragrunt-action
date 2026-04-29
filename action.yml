@@ -30,6 +30,10 @@ inputs:
     description: 'Add -auto-approve to commands which require it when not running interactively'
     default: '1'
     required: false
+  tg_output_capture:
+    description: 'Capture Terragrunt execution output as the `tg_action_output` action output'
+    default: '1'
+    required: false
   github_token:
     description: 'GitHub token for API authentication to avoid rate limits when installing tools'
     required: false
@@ -102,3 +106,4 @@ runs:
         INPUT_TG_DIR: ${{ inputs.tg_dir }}
         INPUT_TG_COMMENT: ${{ inputs.tg_comment }}
         INPUT_TG_ADD_APPROVE: ${{ inputs.tg_add_approve }}
+        INPUT_TG_OUTPUT_CAPTURE: ${{ inputs.tg_output_capture }}
