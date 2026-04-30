@@ -58,11 +58,8 @@ function comment {
     log "Skipping comment as there is not comment url"
     return
   fi
-  local -r escaped_message=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/g; s/\t/\\t/g' | tr -d '\n')
-  local -r tmpfile=$(mktemp)
-  echo "{\"body\": \"$escaped_message\"}" > "$tmpfile"
-  curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d @"$tmpfile" "$comment_url"
-  rm "$tmpfile"
+  jq --arg m "$message" --null-input '{body: $m}' | \
+    curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d @- "$comment_url"
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
