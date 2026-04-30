@@ -24,7 +24,7 @@ inputs:
     required: false
   tg_comment:
     description: 'Include execution output as comment'
-    default: '0'
+    default: "false"
     required: false
   tg_add_approve:
     description: 'Add -auto-approve to commands which require it when not running interactively'
