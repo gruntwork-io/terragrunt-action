@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.github.com)",
+      "WebFetch(domain:github.blog)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(bash -n /Users/tensho/Projects/oss/terragrunt-action/src/main.sh)",
+      "Bash(python3 *)"
+    ]
+  }
+}
