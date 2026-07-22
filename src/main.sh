@@ -48,11 +48,15 @@ function run_terragrunt {
 # post comment to pull request
 function comment {
   local -r message="$1"
-  local comment_url
-  comment_url=$(jq -r '.pull_request.comments_url' "$GITHUB_EVENT_PATH")
-  # may be getting called from something like branch deploy
-  if [[ "${comment_url}" == "" || "${comment_url}" == "null" ]]; then
-    comment_url=$(jq -r '.issue.comments_url' "$GITHUB_EVENT_PATH")
+  local comment_url="$2"
+
+  if [[ -z "$comment_url" ]]; then
+    # Try to get comments URL from GitHub event
+    comment_url=$(jq -r '.pull_request.comments_url' "$GITHUB_EVENT_PATH")
+    # may be getting called from something like branch deploy
+    if [[ "${comment_url}" == "" || "${comment_url}" == "null" ]]; then
+      comment_url=$(jq -r '.issue.comments_url' "$GITHUB_EVENT_PATH")
+    fi
   fi
   if [[ "${comment_url}" == "" || "${comment_url}" == "null" ]]; then
     log "Skipping comment as there is not comment url"
@@ -134,7 +138,9 @@ function main {
   trap 'log "Finished Terragrunt Action execution"' EXIT
   local -r tg_command=${INPUT_TG_COMMAND}
   local -r tg_comment=${INPUT_TG_COMMENT:-0}
+  local -r tg_comment_url=${INPUT_TG_COMMENT_URL}  
   local -r tg_add_approve=${INPUT_TG_ADD_APPROVE:-1}
+  local -r tg_output_capture=${INPUT_TG_OUTPUT_CAPTURE:-1}
   local -r tg_dir=${INPUT_TG_DIR:-${GITHUB_WORKSPACE}} # use GitHub workspace as default
 
   if [[ -z "${tg_command}" ]]; then
@@ -186,14 +192,18 @@ ${terragrunt_output}
 \`\`\`
 
 </details>
-    "
+    " "$tg_comment_url"
   fi
 
   echo "tg_action_exit_code=${exit_code}" >> "${GITHUB_OUTPUT}"
 
-  local tg_action_output
-  tg_action_output=$(clean_multiline_text "${terragrunt_output}")
-  echo "tg_action_output=${tg_action_output}" >> "${GITHUB_OUTPUT}"
+  if [[ "${tg_output_capture}" == "1" ]]; then
+    local tg_action_output
+    tg_action_output=$(clean_multiline_text "${terragrunt_output}")
+    echo "tg_action_output=${tg_action_output}" >> "${GITHUB_OUTPUT}"
+  else
+    log "Skipping tg_action_output capture (tg_output_capture=${tg_output_capture})"
+  fi
 
   exit $exit_code
 }
