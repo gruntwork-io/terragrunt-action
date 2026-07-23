@@ -11,7 +11,10 @@ inputs:
     description: 'Terragrunt version to install (required if no mise.toml file present).'
     required: false
   tofu_version:
-    description: 'OpenTofu version to install (required if no mise.toml and tf_version not set).'
+    description: 'OpenTofu version to install (required if neither mise.toml nor .mise.toml exists, and tf_version/tf_path are not set).'
+    required: false
+  tf_version:
+    description: 'Terraform version to install (required if neither mise.toml nor .mise.toml exists, and tofu_version/tf_path are not set).'
     required: false
   tf_path:
     description: 'Path to Terraform binary to use. This is typically used to explicitly decide to use tofu or terraform when both are installed.'
@@ -59,6 +62,7 @@ runs:
         INPUT_TF_PATH: ${{ inputs.tf_path }}
         INPUT_TG_VERSION: ${{ inputs.tg_version }}
         INPUT_TOFU_VERSION: ${{ inputs.tofu_version }}
+        INPUT_TF_VERSION: ${{ inputs.tf_version }}
       run: |
         if [[ -f "mise.toml" || -f ".mise.toml" ]]; then
           echo "mise_config_exists=true" >> $GITHUB_OUTPUT
@@ -71,8 +75,13 @@ runs:
             exit 1
           fi
 
-         if [[ -z "${INPUT_TOFU_VERSION}" && -z "${INPUT_TF_PATH}" ]]; then
-            echo "ERROR: No mise.toml found, so 'tofu_version' is required unless 'tf_path' is provided."
+          if [[ -n "${INPUT_TOFU_VERSION}" && -n "${INPUT_TF_VERSION}" ]]; then
+            echo "ERROR: 'tofu_version' and 'tf_version' are mutually exclusive. Set only one, or use 'tf_path'."
+            exit 1
+          fi
+
+          if [[ -z "${INPUT_TOFU_VERSION}" && -z "${INPUT_TF_VERSION}" && -z "${INPUT_TF_PATH}" ]]; then
+            echo "ERROR: No mise.toml found, so one of 'tofu_version', 'tf_version', or 'tf_path' is required."
             exit 1
           fi
         fi
@@ -93,6 +102,7 @@ runs:
         tool_versions: |
           terragrunt ${{ inputs.tg_version }}
           ${{ inputs.tofu_version && format('opentofu {0}', inputs.tofu_version) || '' }}
+          ${{ inputs.tf_version && format('terraform {0}', inputs.tf_version) || '' }}
       env:
         MISE_GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
 

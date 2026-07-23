@@ -132,14 +132,25 @@ else
     exit 1
   fi
 
-  if [[ -z "${INPUT_TOFU_VERSION}" ]]; then
-    echo "ERROR: No mise.toml found, making 'tofu_version' required"
+  if [[ -n "${INPUT_TOFU_VERSION}" && -n "${INPUT_TF_VERSION}" ]]; then
+    echo "ERROR: 'tofu_version' and 'tf_version' are mutually exclusive. Set only one, or use 'tf_path'."
+    exit 1
+  fi
+
+  if [[ -z "${INPUT_TOFU_VERSION}" && -z "${INPUT_TF_VERSION}" && -z "${INPUT_TF_PATH}" ]]; then
+    echo "ERROR: No mise.toml found, so one of 'tofu_version', 'tf_version', or 'tf_path' is required."
     exit 1
   fi
 fi
 
 echo "=== Installing tools with mise ==="
-echo "Would install: terragrunt ${INPUT_TG_VERSION}, opentofu ${INPUT_TOFU_VERSION}"
+if [[ -n "${INPUT_TOFU_VERSION}" ]]; then
+  echo "Would install: terragrunt ${INPUT_TG_VERSION}, opentofu ${INPUT_TOFU_VERSION}"
+elif [[ -n "${INPUT_TF_VERSION}" ]]; then
+  echo "Would install: terragrunt ${INPUT_TG_VERSION}, terraform ${INPUT_TF_VERSION}"
+else
+  echo "Would install: terragrunt ${INPUT_TG_VERSION}"
+fi
 
 if [[ -n "${INPUT_TG_COMMAND}" ]]; then
   echo "=== Executing Terragrunt ==="
@@ -167,6 +178,9 @@ fi
 	}
 	if iacVersion != "" && iacType == "tofu" {
 		env = append(env, "INPUT_TOFU_VERSION="+iacVersion)
+	}
+	if iacVersion != "" && iacType == "tf" {
+		env = append(env, "INPUT_TF_VERSION="+iacVersion)
 	}
 	if command != "" {
 		env = append(env, "INPUT_TG_COMMAND="+command)
