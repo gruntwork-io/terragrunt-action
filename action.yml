@@ -52,7 +52,7 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Check for mise.toml and validate inputs
+    - name: Check for mise configuration files and validate inputs
       id: mise-check
       shell: bash
       env:
@@ -60,7 +60,7 @@ runs:
         INPUT_TG_VERSION: ${{ inputs.tg_version }}
         INPUT_TOFU_VERSION: ${{ inputs.tofu_version }}
       run: |
-        if [[ -f "mise.toml" || -f ".mise.toml" ]]; then
+        if [[ -f "mise.toml" || -f ".mise.toml" || -f ".tool-versions" ]]; then
           echo "mise_config_exists=true" >> $GITHUB_OUTPUT
           echo "Found mise configuration file, will use it for tool versions"
         else

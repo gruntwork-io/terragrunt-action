@@ -55,22 +55,47 @@ func TestTerragruntCompositeAction(t *testing.T) {
 }
 
 func testActionWithMiseConfig(t *testing.T, actionConfig ActionConfig) {
-	fixturePath := prepareFixture(t, "fixture-action-execution")
-
-	// Create mise.toml in fixture
-	miseConfig := fmt.Sprintf(`[tools]
+	for _, tt := range []struct {
+		name       string
+		miseConfig string
+	}{
+		{
+			name: "mise.toml",
+			miseConfig: fmt.Sprintf(`[tools]
 terragrunt = "%s"
 opentofu = "%s"
-`, actionConfig.tgVersion, actionConfig.iacVersion)
+`, actionConfig.tgVersion, actionConfig.iacVersion),
+		},
+		{
+			name: ".mise.toml",
+			miseConfig: fmt.Sprintf(`[tools]
+terragrunt = "%s"
+opentofu = "%s"
+`, actionConfig.tgVersion, actionConfig.iacVersion),
+		},
+		{
+			name: ".tool-versions",
+			miseConfig: fmt.Sprintf(`# Tool versions
+terragrunt %s
+opentofu %s
+`, actionConfig.tgVersion, actionConfig.iacVersion),
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			fixturePath := prepareFixture(t, "fixture-action-execution")
 
-	miseConfigPath := filepath.Join(fixturePath, "mise.toml")
-	err := os.WriteFile(miseConfigPath, []byte(miseConfig), 0644)
-	require.NoError(t, err)
+			// Create mise config file in fixture
+			miseConfigPath := filepath.Join(fixturePath, tt.name)
+			err := os.WriteFile(miseConfigPath, []byte(tt.miseConfig), 0644)
+			require.NoError(t, err)
 
-	// Test that action works with mise.toml (no version inputs needed)
-	output := runCompositeAction(t, "", "", actionConfig.tgVersion, fixturePath, "plan")
-	assert.Contains(t, output, "Found mise configuration file")
-	assert.Contains(t, output, "Starting Terragrunt Action")
+			// Test that action works with mise config file (no version inputs needed)
+			output := runCompositeAction(t, "", "", actionConfig.tgVersion, fixturePath, "plan")
+			assert.Contains(t, output, "Found mise configuration file")
+			assert.Contains(t, output, "Starting Terragrunt Action")
+		})
+	}
 }
 
 func testActionWithInputVersions(t *testing.T, actionConfig ActionConfig) {
@@ -121,7 +146,7 @@ func runCompositeActionInternal(t *testing.T, iacVersion, iacType, tgVersion, fi
 set -e
 
 echo "=== Checking for mise.toml and validating inputs ==="
-if [[ -f "mise.toml" || -f ".mise.toml" ]]; then
+if [[ -f "mise.toml" || -f ".mise.toml" || -f ".tool-versions" ]]; then
   echo "mise_config_exists=true"
   echo "Found mise configuration file, will use it for tool versions"
 else
