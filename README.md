@@ -162,7 +162,7 @@ jobs:
           tg_command: 'apply'
 ```
 
-### Example 2: Using action inputs for tool versions
+### Example 3: Using action inputs for tool versions
 
 ```yaml
 name: 'Terragrunt GitHub Actions'
