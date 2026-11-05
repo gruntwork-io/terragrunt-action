@@ -62,11 +62,24 @@ function comment {
     log "Skipping comment as there is not comment url"
     return
   fi
+  if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+    log "GITHUB_TOKEN is required to post a pull request comment"
+    return 1
+  fi
   local -r escaped_message=$(printf '%s' "$message" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/g; s/\t/\\t/g' | tr -d '\n')
-  local -r tmpfile=$(mktemp)
+  local tmpfile
+  tmpfile=$(mktemp)
+  # Clean up on success or when curl --fail aborts under set -e
+  trap 'rm -f "${tmpfile}"' RETURN
   echo "{\"body\": \"$escaped_message\"}" > "$tmpfile"
-  curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -d @"$tmpfile" "$comment_url"
-  rm "$tmpfile"
+  # Bearer works for JWT installation tokens and classic tokens. The legacy
+  # `Authorization: token` scheme returns 401 Bad credentials for JWTs.
+  # --fail so a non-2xx response fails the action instead of succeeding silently.
+  curl --fail -sS \
+    -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d @"$tmpfile" \
+    "$comment_url"
 }
 
 # Run INPUT_PRE_EXEC_* environment variables as Bash code
